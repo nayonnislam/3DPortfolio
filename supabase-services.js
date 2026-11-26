@@ -107,6 +107,10 @@ export function isAdminSignedIn() {
   return Boolean(session?.access_token && session.user?.app_metadata?.role === 'admin');
 }
 
+export function getAdminEmail() {
+  return session?.user?.email || '';
+}
+
 export async function restoreAdminSession() {
   if (!(await ensureFreshSession())) return false;
   try {
@@ -199,13 +203,11 @@ export async function confirmPasswordReset(identifier, code, newPassword) {
   await signOut();
 }
 
-export async function changePassword(currentPassword, newPassword) {
+async function reauthenticateAdmin(currentPassword) {
   if (!currentUsername || !(await ensureFreshSession())) {
-    throw new Error('Please sign in again to change your password.');
+    throw new Error('Please sign in again to update your account.');
   }
   if (!currentPassword) throw new Error('Enter your current password.');
-  if (currentPassword === newPassword) throw new Error('The new password must be different from the current password.');
-  validateAdminPassword(newPassword);
   const identifier = currentUsername;
   const result = await supabaseRequest('/auth/v1/token?grant_type=password', {
     method: 'POST',
@@ -218,6 +220,32 @@ export async function changePassword(currentPassword, newPassword) {
     throw new Error('This account does not have administrator access.');
   }
   setSession(result);
+}
+
+export async function changeEmail(currentPassword, newEmail) {
+  const email = newEmail.trim();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    throw new Error('Enter a valid email address.');
+  }
+  if (email.toLowerCase() === getAdminEmail().toLowerCase()) {
+    throw new Error('The new email must be different from the current email.');
+  }
+  await reauthenticateAdmin(currentPassword);
+  const user = await supabaseRequest('/auth/v1/user', {
+    method: 'PUT',
+    token: session.access_token,
+    body: { email }
+  });
+  if (!user) throw new Error('Supabase did not return updated account details.');
+  session.user = user;
+  currentUsername = user.email || user.phone || currentUsername;
+  persistSession();
+}
+
+export async function changePassword(currentPassword, newPassword) {
+  if (currentPassword === newPassword) throw new Error('The new password must be different from the current password.');
+  validateAdminPassword(newPassword);
+  await reauthenticateAdmin(currentPassword);
   const user = await supabaseRequest('/auth/v1/user', {
     method: 'PUT',
     token: session.access_token,
@@ -242,6 +270,23 @@ async function restRequest(path, { method = 'GET', body, prefer } = {}) {
 
 export async function getProjects() {
   return restRequest('portfolio_projects?select=*&order=created_at.asc');
+}
+
+export async function getSiteSettings() {
+  const rows = await restRequest('portfolio_site_settings?id=eq.1&select=settings');
+  return rows[0]?.settings || null;
+}
+
+export async function saveSiteSettings(settings) {
+  await ensureFreshSession();
+  if (!isAdminSignedIn()) throw new Error('Sign in as an administrator to save website settings.');
+  const rows = await restRequest('portfolio_site_settings?on_conflict=id', {
+    method: 'POST',
+    body: { id: 1, settings, updated_at: new Date().toISOString() },
+    prefer: 'resolution=merge-duplicates,return=representation'
+  });
+  if (!rows[0]?.settings) throw new Error('Supabase did not return the saved website settings.');
+  return rows[0].settings;
 }
 
 export async function saveProject(project) {

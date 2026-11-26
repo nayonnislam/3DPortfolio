@@ -2,20 +2,29 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import {
+  changeEmail,
   changePassword,
   deleteProject,
+  getAdminEmail,
   getProjects,
+  getSiteSettings,
   isAdminSignedIn,
   isSupabaseConfigured,
   requestPasswordReset,
   restoreAdminSession,
   saveProject,
+  saveSiteSettings,
   signIn,
   signOut,
   confirmPasswordReset,
   uploadFile,
   validateAdminPassword
 } from './supabase-services.js';
+import {
+  applySiteSettings,
+  DEFAULT_SITE_SETTINGS,
+  normalizeSiteSettings
+} from './site-settings.js';
 
 const viewer = document.querySelector('#modelViewer');
 const loading = document.querySelector('#viewerLoading');
@@ -52,7 +61,12 @@ const projectCategoryTitle = document.querySelector('#projectCategoryTitle');
 const projectCategoryEmpty = document.querySelector('#projectCategoryEmpty');
 const projectShowMoreButton = document.querySelector('#showMoreProjects');
 const projectManagerStatus = document.querySelector('#projectManagerStatus');
+const websiteSettingsPanel = document.querySelector('#websiteSettings');
+const websiteSettingsForm = document.querySelector('#websiteSettingsForm');
+const websiteSettingsMessage = document.querySelector('#websiteSettingsMessage');
+const websiteSettingsError = document.querySelector('#websiteSettingsError');
 let activeProjectCategory = 'eyewear';
+let siteSettings = normalizeSiteSettings(DEFAULT_SITE_SETTINGS);
 const expandedProjectCategories = new Set();
 let customProjects = [];
 let editingProjectId = null;
@@ -64,6 +78,31 @@ let projectModelCamera;
 let projectModelControls;
 let activeProjectModel;
 let requestedProjectModel;
+
+function getNestedSetting(object, path) {
+  return path.split('.').reduce((value, key) => value?.[key], object);
+}
+
+function setNestedSetting(object, path, value) {
+  const keys = path.split('.');
+  const finalKey = keys.pop();
+  const parent = keys.reduce((current, key) => current[key], object);
+  parent[finalKey] = value;
+}
+
+function fillWebsiteSettingsForm() {
+  websiteSettingsForm.querySelectorAll('[data-setting-path]').forEach(field => {
+    field.value = getNestedSetting(siteSettings, field.dataset.settingPath) ?? '';
+  });
+}
+
+function readWebsiteSettingsForm() {
+  const settings = JSON.parse(JSON.stringify(siteSettings));
+  websiteSettingsForm.querySelectorAll('[data-setting-path]').forEach(field => {
+    setNestedSetting(settings, field.dataset.settingPath, field.value.trim());
+  });
+  return normalizeSiteSettings(settings);
+}
 
 function showProjectImage(index) {
   activeProjectImage = (index + projectImagePaths.length) % projectImagePaths.length;
@@ -217,7 +256,7 @@ function applyProjectCategory(category = activeProjectCategory) {
   projectCategoryEmpty.hidden = matchingCards.length > 0;
   projectShowMoreButton.hidden = matchingCards.length <= rowLimit;
   projectShowMoreButton.setAttribute('aria-expanded', String(expanded));
-  projectShowMoreButton.textContent = expanded ? 'Show less' : 'Show more';
+  projectShowMoreButton.textContent = expanded ? siteSettings.text.showLess : siteSettings.text.showMore;
 }
 
 function renderCustomProjects() {
@@ -318,10 +357,25 @@ function addAdminActions(card) {
 function updateAdminControls() {
   const signedIn = isAdminSignedIn();
   document.querySelector('#adminLoginButton').hidden = signedIn;
-  document.querySelector('#changePasswordButton').hidden = !signedIn;
-  document.querySelector('#adminLogoutButton').hidden = !signedIn;
+  websiteSettingsPanel.hidden = !signedIn;
+  document.querySelector('#adminAccountSettings').hidden = !signedIn;
+  document.querySelector('#currentAdminEmail').textContent = getAdminEmail() || 'No email address is set';
   document.querySelector('#addProjectButton').hidden = !signedIn;
   projectGrid.querySelectorAll('.project-card').forEach(addAdminActions);
+}
+
+async function loadWebsiteSettings() {
+  try {
+    const savedSettings = await getSiteSettings();
+    if (!savedSettings) return;
+    siteSettings = normalizeSiteSettings(savedSettings);
+    applySiteSettings(siteSettings);
+    applyProjectCategory();
+    if (isAdminSignedIn()) fillWebsiteSettingsForm();
+  } catch (error) {
+    console.error('Shared website settings could not be loaded.', error);
+    websiteSettingsError.textContent = 'Could not load saved website settings. Run the updated supabase/setup.sql script in Supabase.';
+  }
 }
 
 function cardToProject(card) {
@@ -455,13 +509,18 @@ window.addEventListener('resize', () => {
   cancelAnimationFrame(projectGridResizeFrame);
   projectGridResizeFrame = requestAnimationFrame(() => applyProjectCategory());
 });
+applySiteSettings(siteSettings);
 applyProjectCategory();
 updateAdminControls();
 if (isSupabaseConfigured()) {
   refreshProjects();
+  loadWebsiteSettings();
   restoreAdminSession().then(restored => {
     updateAdminControls();
-    if (restored) refreshProjects();
+    if (restored) {
+      fillWebsiteSettingsForm();
+      refreshProjects();
+    }
   });
 }
 else {
@@ -484,6 +543,28 @@ document.querySelector('#addProjectButton').addEventListener('click', () => {
   customProjects.push(project);
   renderCustomProjects();
   openProjectEditor(project);
+});
+
+websiteSettingsForm.addEventListener('submit', async event => {
+  event.preventDefault();
+  websiteSettingsError.textContent = '';
+  websiteSettingsMessage.textContent = '';
+  const saveButton = websiteSettingsForm.querySelector('[type="submit"]');
+  saveButton.disabled = true;
+  try {
+    const requestedSettings = readWebsiteSettingsForm();
+    const savedSettings = await saveSiteSettings(requestedSettings);
+    siteSettings = normalizeSiteSettings(savedSettings);
+    applySiteSettings(siteSettings);
+    applyProjectCategory();
+    fillWebsiteSettingsForm();
+    websiteSettingsMessage.textContent = 'Website settings saved and published for all visitors.';
+  } catch (error) {
+    console.error('Website settings could not be saved.', error);
+    websiteSettingsError.textContent = error.message || 'Could not save website settings.';
+  } finally {
+    saveButton.disabled = false;
+  }
 });
 
 function openProjectEditor(project) {
@@ -617,13 +698,14 @@ document.addEventListener('click', event => {
 const adminDialog = document.querySelector('#adminDialog');
 const adminLoginForm = document.querySelector('#adminLoginForm');
 const forgotPasswordForm = document.querySelector('#forgotPasswordForm');
+const changeEmailForm = document.querySelector('#changeEmailForm');
 const changePasswordForm = document.querySelector('#changePasswordForm');
 const adminDialogTitle = document.querySelector('#adminDialogTitle');
 const adminDialogDescription = document.querySelector('#adminDialogDescription');
 let resetUsername = '';
 
 function showAdminForm(form, title, description) {
-  [adminLoginForm, forgotPasswordForm, changePasswordForm].forEach(item => {
+  [adminLoginForm, forgotPasswordForm].forEach(item => {
     item.hidden = item !== form;
   });
   adminDialogTitle.textContent = title;
@@ -632,12 +714,6 @@ function showAdminForm(form, title, description) {
 
 document.querySelector('#adminLoginButton').addEventListener('click', () => {
   showAdminForm(adminLoginForm, 'Admin Login', 'Sign in with your registered email or phone number and password.');
-  adminDialog.showModal();
-});
-document.querySelector('#changePasswordButton').addEventListener('click', () => {
-  changePasswordForm.reset();
-  document.querySelector('#changePasswordError').textContent = '';
-  showAdminForm(changePasswordForm, 'Change Password', 'Choose a new password for your administrator account.');
   adminDialog.showModal();
 });
 document.querySelector('#adminLogoutButton').addEventListener('click', async () => {
@@ -679,6 +755,7 @@ adminLoginForm.addEventListener('submit', async event => {
     await signIn(adminLoginForm.elements.username.value, adminLoginForm.elements.password.value);
     await refreshProjects();
     updateAdminControls();
+    fillWebsiteSettingsForm();
     adminDialog.close();
     projectManagerStatus.textContent = 'Admin login successful. Your edits will be published for everyone.';
   } catch (error) {
@@ -707,10 +784,37 @@ forgotPasswordForm.addEventListener('submit', async event => {
     errorOutput.textContent = error.message || 'Could not reset the password.';
   }
 });
+changeEmailForm.addEventListener('submit', async event => {
+  event.preventDefault();
+  const errorOutput = document.querySelector('#changeEmailError');
+  const message = document.querySelector('#changeEmailMessage');
+  errorOutput.textContent = '';
+  message.textContent = '';
+  const submitButton = changeEmailForm.querySelector('[type="submit"]');
+  submitButton.disabled = true;
+  try {
+    await changeEmail(
+      changeEmailForm.elements.currentPassword.value,
+      changeEmailForm.elements.newEmail.value
+    );
+    changeEmailForm.reset();
+    document.querySelector('#currentAdminEmail').textContent = getAdminEmail() || 'No email address is set';
+    message.textContent = 'Email update requested. Check your inbox and confirm the change before signing in with the new address.';
+  } catch (error) {
+    console.error('The administrator email could not be updated.', error);
+    errorOutput.textContent = error.message || 'Could not change the email address.';
+  } finally {
+    submitButton.disabled = false;
+  }
+});
 changePasswordForm.addEventListener('submit', async event => {
   event.preventDefault();
   const errorOutput = document.querySelector('#changePasswordError');
+  const message = document.querySelector('#changePasswordMessage');
   errorOutput.textContent = '';
+  message.textContent = '';
+  const submitButton = changePasswordForm.querySelector('[type="submit"]');
+  submitButton.disabled = true;
   try {
     const newPassword = changePasswordForm.elements.newPassword.value;
     const confirmPassword = changePasswordForm.elements.confirmPassword.value;
@@ -723,9 +827,12 @@ changePasswordForm.addEventListener('submit', async event => {
       newPassword
     );
     changePasswordForm.reset();
-    errorOutput.textContent = 'Password changed successfully.';
+    message.textContent = 'Password changed successfully.';
   } catch (error) {
+    console.error('The administrator password could not be changed.', error);
     errorOutput.textContent = error.message || 'Could not change the password.';
+  } finally {
+    submitButton.disabled = false;
   }
 });
 

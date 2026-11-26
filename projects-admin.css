@@ -121,6 +121,149 @@
   font-size: 11px;
 }
 
+.admin-account-settings[hidden] {
+  display: none;
+}
+
+.admin-account-settings {
+  width: min(780px, calc(100% - 40px));
+  margin: clamp(34px, 7vw, 76px) auto;
+}
+
+.admin-account-card {
+  display: grid;
+  gap: 22px;
+  padding: clamp(22px, 5vw, 38px);
+  border: 1px solid rgba(255, 255, 255, .13);
+  border-radius: 12px;
+  color: var(--text);
+  background: #0d1015;
+  box-shadow: 0 18px 60px rgba(0, 0, 0, .22);
+}
+
+.admin-account-heading .section-kicker {
+  margin: 0 0 10px;
+}
+
+.admin-account-heading h2 {
+  margin: 0;
+  font: 800 clamp(24px, 4vw, 32px)/1.1 var(--display);
+}
+
+.admin-account-heading > p:last-child {
+  margin: 9px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.admin-current-email {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 6px;
+  color: var(--muted);
+  background: rgba(255, 255, 255, .05);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+
+.admin-current-email strong {
+  overflow-wrap: anywhere;
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+.admin-account-form {
+  display: grid;
+  gap: 14px;
+  padding-bottom: 22px;
+  border-bottom: 1px solid rgba(255, 255, 255, .12);
+}
+
+.admin-account-form h3 {
+  margin: 0 0 2px;
+  font: 600 16px/1.3 var(--display);
+}
+
+.admin-account-form label {
+  display: grid;
+  gap: 8px;
+  color: #dce2ed;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.admin-account-form input {
+  width: 100%;
+  padding: 12px 13px;
+  border: 1px solid rgba(255, 255, 255, .16);
+  border-radius: 6px;
+  outline: none;
+  color: var(--text);
+  background: #090b0f;
+  font: 12px/1.5 var(--font);
+}
+
+.admin-account-form input:focus {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 2px rgba(155, 184, 255, .14);
+}
+
+.admin-account-form .button {
+  justify-self: start;
+  min-width: 150px;
+  border: 0;
+  cursor: pointer;
+}
+
+.admin-account-form .button:disabled {
+  cursor: wait;
+  opacity: .65;
+}
+
+.admin-account-message,
+.admin-account-error {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.admin-account-message {
+  color: #b8c5dd;
+}
+
+.admin-account-error {
+  color: #ffaaa5;
+}
+
+.admin-account-signout {
+  justify-self: end;
+  min-width: 110px;
+  padding: 10px 16px;
+  border: 1px solid rgba(255, 255, 255, .2);
+  border-radius: 6px;
+  color: var(--text);
+  background: transparent;
+  font: 11px var(--font);
+  cursor: pointer;
+}
+
+.admin-account-signout:hover {
+  border-color: var(--blue);
+  color: var(--blue);
+}
+
+.admin-account-form :focus-visible,
+.admin-account-signout:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 3px;
+}
+
 .project-editor-dialog {
   width: min(590px, calc(100% - 28px));
   max-width: none;

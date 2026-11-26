@@ -11,6 +11,7 @@
   <link rel="stylesheet" href="gallery.css">
   <link rel="stylesheet" href="projects-admin.css">
   <link rel="stylesheet" href="scroll-effects.css">
+  <link rel="stylesheet" href="site-settings.css">
   <script type="importmap">{"imports":{"three":"https://unpkg.com/three@0.161.0/build/three.module.js","three/addons/":"https://unpkg.com/three@0.161.0/examples/jsm/"}}</script>
 </head>
 <body>
@@ -19,7 +20,7 @@
     <a class="brand" href="#home" aria-label="Waheduzzaman Nayon home"><img class="brand-logo" src="assets/images/waheduzzaman-nayon-logo.png" alt=""><span class="brand-copy"><strong>WAHEDUZZAMAN NAYON</strong><small>3D Designer</small></span></a>
     <button class="menu-toggle" id="menuToggle" aria-label="Toggle menu"><span></span><span></span></button>
     <nav id="mainNav"><a class="active" href="#home">Home</a><a href="#projects">Projects</a><a href="#contact">Contact</a></nav>
-    <div class="header-actions"><button class="header-admin-button" id="adminLoginButton" type="button">Admin Login</button><button class="header-admin-button" id="changePasswordButton" type="button" hidden>Change Password</button><button class="header-admin-button" id="adminLogoutButton" type="button" hidden>Log out</button><a class="header-cta" href="#contact">Let’s talk <span>↗</span></a></div>
+    <div class="header-actions"><button class="header-admin-button" id="adminLoginButton" type="button">Admin Login</button><a class="header-cta" href="#contact">Let’s talk <span>↗</span></a></div>
   </header>
   <main>
     <div class="home-intro-stage">
@@ -45,6 +46,119 @@
       <p class="project-manager-status" id="projectManagerStatus" role="status"></p>
     </section>
     </div>
+    <section class="website-settings section-wrap" id="websiteSettings" aria-labelledby="websiteSettingsTitle" hidden>
+      <form class="website-settings-card" id="websiteSettingsForm">
+        <header class="website-settings-heading">
+          <p class="section-kicker">SITE ADMIN</p>
+          <h2 id="websiteSettingsTitle">Website Settings</h2>
+          <p>Changes are saved for everyone who visits your portfolio. Project names and descriptions are managed from each project’s Edit button.</p>
+        </header>
+        <details class="website-settings-group" open>
+          <summary>Text and labels</summary>
+          <div class="website-settings-fields">
+            <label>Brand name<input data-setting-path="text.brandName" maxlength="100"></label>
+            <label>Brand role<input data-setting-path="text.brandRole" maxlength="100"></label>
+            <label>Home navigation label<input data-setting-path="text.navHome" maxlength="80"></label>
+            <label>Projects navigation label<input data-setting-path="text.navProjects" maxlength="80"></label>
+            <label>Contact navigation label<input data-setting-path="text.navContact" maxlength="80"></label>
+            <label>Header contact button<input data-setting-path="text.headerCta" maxlength="80"></label>
+            <label>Hero greeting<input data-setting-path="text.heroGreeting" maxlength="120"></label>
+            <label>Hero name line 1<input data-setting-path="text.heroFirstName" maxlength="100"></label>
+            <label>Hero name line 2<input data-setting-path="text.heroLastName" maxlength="100"></label>
+            <label>Hero role 1<input data-setting-path="text.heroRole1" maxlength="100"></label>
+            <label>Hero role 2<input data-setting-path="text.heroRole2" maxlength="100"></label>
+            <label>Hero role 3<input data-setting-path="text.heroRole3" maxlength="100"></label>
+            <label class="website-settings-wide">Hero introduction<textarea data-setting-path="text.heroIntro" rows="3" maxlength="1000"></textarea></label>
+            <label>Hero button<input data-setting-path="text.heroButton" maxlength="100"></label>
+            <label>Hero image description<input data-setting-path="text.heroImageAlt" maxlength="200"></label>
+            <label>3D preview loading text<input data-setting-path="text.viewerLoading" maxlength="120"></label>
+            <label>Eyewear category<input data-setting-path="text.categories.eyewear" maxlength="80"></label>
+            <label>Product category<input data-setting-path="text.categories.product" maxlength="80"></label>
+            <label>Character category<input data-setting-path="text.categories.character" maxlength="80"></label>
+            <label>2D category<input data-setting-path="text.categories.2d" maxlength="80"></label>
+            <label>Add project button<input data-setting-path="text.addProject" maxlength="80"></label>
+            <label class="website-settings-wide">Empty category message<textarea data-setting-path="text.emptyProjects" rows="2" maxlength="300"></textarea></label>
+            <label>Show more button<input data-setting-path="text.showMore" maxlength="80"></label>
+            <label>Show less button<input data-setting-path="text.showLess" maxlength="80"></label>
+            <label>Project gallery label<input data-setting-path="text.projectGallery" maxlength="80"></label>
+            <label>Project details label<input data-setting-path="text.projectDetails" maxlength="80"></label>
+            <label>3D model label<input data-setting-path="text.interactiveModel" maxlength="80"></label>
+            <label>3D model instructions<input data-setting-path="text.modelInstructions" maxlength="120"></label>
+            <label>Gallery help text<input data-setting-path="text.galleryHint" maxlength="160"></label>
+            <label>Contact heading line 1<input data-setting-path="text.contactTitleFirst" maxlength="100"></label>
+            <label>Contact heading line 2<input data-setting-path="text.contactTitleSecond" maxlength="100"></label>
+            <label class="website-settings-wide">Contact introduction<textarea data-setting-path="text.contactText" rows="3" maxlength="1000"></textarea></label>
+            <label>Contact button<input data-setting-path="text.contactButton" maxlength="100"></label>
+            <label>LinkedIn label<input data-setting-path="text.linkedinLabel" maxlength="80"></label>
+            <label>Instagram label<input data-setting-path="text.instagramLabel" maxlength="80"></label>
+            <label>Behance label<input data-setting-path="text.behanceLabel" maxlength="80"></label>
+            <label class="website-settings-wide">About paragraph 1<textarea data-setting-path="text.aboutFirst" rows="4" maxlength="1000"></textarea></label>
+            <label class="website-settings-wide">About paragraph 2<textarea data-setting-path="text.aboutSecond" rows="3" maxlength="1000"></textarea></label>
+          </div>
+        </details>
+        <details class="website-settings-group">
+          <summary>Contact information</summary>
+          <div class="website-settings-fields">
+            <label>Email address<input data-setting-path="contact.email" type="email" autocomplete="email" maxlength="254"></label>
+            <label>Phone number<input data-setting-path="contact.phone" type="tel" autocomplete="tel" maxlength="80"></label>
+            <label class="website-settings-wide">Physical address<textarea data-setting-path="contact.address" rows="2" maxlength="300"></textarea></label>
+            <label>LinkedIn profile URL<input data-setting-path="contact.linkedin" type="url" placeholder="https://..." maxlength="500"></label>
+            <label>Instagram profile URL<input data-setting-path="contact.instagram" type="url" placeholder="https://..." maxlength="500"></label>
+            <label>Behance profile URL<input data-setting-path="contact.behance" type="url" placeholder="https://..." maxlength="500"></label>
+          </div>
+        </details>
+        <details class="website-settings-group">
+          <summary>Colors</summary>
+          <div class="website-settings-fields website-settings-colors">
+            <label>Page background<input data-setting-path="theme.background" type="color"></label>
+            <label>Section and panel background<input data-setting-path="theme.panel" type="color"></label>
+            <label>Main text color<input data-setting-path="theme.text" type="color"></label>
+            <label>Secondary text color<input data-setting-path="theme.muted" type="color"></label>
+            <label>Accent color<input data-setting-path="theme.accent" type="color"></label>
+            <label>Button background<input data-setting-path="theme.buttonBackground" type="color"></label>
+            <label>Button text color<input data-setting-path="theme.buttonText" type="color"></label>
+          </div>
+        </details>
+        <details class="website-settings-group">
+          <summary>Fonts</summary>
+          <div class="website-settings-fields">
+            <label>Body font<select data-setting-path="fonts.body"><option value="dm-sans">DM Sans</option><option value="manrope">Manrope</option><option value="arial">Arial</option><option value="georgia">Georgia</option><option value="trebuchet">Trebuchet MS</option></select></label>
+            <label>Heading font<select data-setting-path="fonts.heading"><option value="dm-sans">DM Sans</option><option value="manrope">Manrope</option><option value="arial">Arial</option><option value="georgia">Georgia</option><option value="trebuchet">Trebuchet MS</option></select></label>
+          </div>
+        </details>
+        <p class="website-settings-message" id="websiteSettingsMessage" role="status"></p>
+        <p class="website-settings-error" id="websiteSettingsError" role="alert"></p>
+        <button class="button button-light website-settings-save" type="submit">Save website settings</button>
+      </form>
+    </section>
+    <section class="admin-account-settings section-wrap" id="adminAccountSettings" aria-labelledby="adminAccountSettingsTitle" hidden>
+      <div class="admin-account-card">
+        <header class="admin-account-heading">
+          <p class="section-kicker">ACCOUNT</p>
+          <h2 id="adminAccountSettingsTitle">Account settings</h2>
+          <p>Manage your administrator sign-in details.</p>
+        </header>
+        <p class="admin-current-email">Current email <strong id="currentAdminEmail">Not available</strong></p>
+        <form class="admin-account-form" id="changeEmailForm">
+          <h3>Change email</h3>
+          <label>New email address<input name="newEmail" type="email" autocomplete="email" required></label>
+          <label>Current password<input name="currentPassword" type="password" autocomplete="current-password" required></label>
+          <p class="admin-account-message" id="changeEmailMessage" role="status"></p>
+          <p class="admin-account-error" id="changeEmailError" role="alert"></p>
+          <button class="button button-light" type="submit">Change email</button>
+        </form>
+        <form class="admin-account-form" id="changePasswordForm">
+          <h3>Change password</h3>
+          <label>Current password<input name="currentPassword" type="password" autocomplete="current-password" required></label>
+          <label>New password<input name="newPassword" type="password" autocomplete="new-password" minlength="12" required><small class="admin-password-hint">At least 12 characters with uppercase, lowercase, a number, and a symbol.</small></label>
+          <label>Confirm new password<input name="confirmPassword" type="password" autocomplete="new-password" minlength="12" required></label>
+          <p class="admin-account-message" id="changePasswordMessage" role="status"></p>
+          <p class="admin-account-error" id="changePasswordError" role="alert"></p>
+          <button class="button button-light" type="submit">Change password</button>
+        </form>
+        <button class="admin-account-signout" id="adminLogoutButton" type="button">Sign out</button>
+      </div>
+    </section>
     <dialog class="project-editor-dialog" id="projectEditorDialog" aria-labelledby="projectEditorTitle">
       <form class="project-editor" id="projectEditorForm">
         <header class="project-editor-heading"><div><p class="section-kicker">YOUR PORTFOLIO</p><h2 id="projectEditorTitle">Create a new project</h2><p>Choose a category to show this project in the matching section.</p></div><button class="dialog-close" id="closeProjectEditor" type="button" aria-label="Close project form">×</button></header>
@@ -83,13 +197,6 @@
           <p class="admin-form-error" id="forgotPasswordError" role="alert"></p>
           <button class="button button-light" type="submit">Set new password</button>
           <button class="admin-text-button" id="backToLogin" type="button">Back to login</button>
-        </form>
-        <form id="changePasswordForm" class="admin-form" hidden>
-          <label>Current password<input name="currentPassword" type="password" autocomplete="current-password" required></label>
-          <label>New password<input name="newPassword" type="password" autocomplete="new-password" minlength="12" required><small class="admin-password-hint">At least 12 characters with uppercase, lowercase, a number, and a symbol.</small></label>
-          <label>Confirm new password<input name="confirmPassword" type="password" autocomplete="new-password" minlength="12" required></label>
-          <p class="admin-form-error" id="changePasswordError" role="alert"></p>
-          <button class="button button-light" type="submit">Change password</button>
         </form>
       </div>
     </dialog>

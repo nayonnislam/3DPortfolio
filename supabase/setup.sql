@@ -59,6 +59,39 @@ grant select on public.portfolio_projects to anon, authenticated;
 grant insert, update, delete on public.portfolio_projects to authenticated;
 grant usage on schema public to anon, authenticated;
 
+create table if not exists public.portfolio_site_settings (
+  id integer primary key default 1 check (id = 1),
+  settings jsonb not null default '{}'::jsonb,
+  updated_at timestamptz not null default now()
+);
+
+alter table public.portfolio_site_settings enable row level security;
+
+drop policy if exists "Anyone can view portfolio site settings" on public.portfolio_site_settings;
+create policy "Anyone can view portfolio site settings"
+  on public.portfolio_site_settings
+  for select
+  to anon, authenticated
+  using (true);
+
+drop policy if exists "Admins can insert portfolio site settings" on public.portfolio_site_settings;
+create policy "Admins can insert portfolio site settings"
+  on public.portfolio_site_settings
+  for insert
+  to authenticated
+  with check ((select auth.jwt() -> 'app_metadata' ->> 'role') = 'admin');
+
+drop policy if exists "Admins can update portfolio site settings" on public.portfolio_site_settings;
+create policy "Admins can update portfolio site settings"
+  on public.portfolio_site_settings
+  for update
+  to authenticated
+  using ((select auth.jwt() -> 'app_metadata' ->> 'role') = 'admin')
+  with check ((select auth.jwt() -> 'app_metadata' ->> 'role') = 'admin');
+
+grant select on public.portfolio_site_settings to anon, authenticated;
+grant insert, update on public.portfolio_site_settings to authenticated;
+
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 values (
   'portfolio',
