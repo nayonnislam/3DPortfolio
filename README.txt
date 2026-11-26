@@ -1,32 +1,36 @@
-NAYON WAHE DUZZAMAN — 3D PORTFOLIO WEBSITE
+NAYON PORTFOLIO — VERCEL + SUPABASE
 
-FILES
-- index.html: website content and sections
-- style.css: responsive visual design and mobile layout
-- gallery.css: featured project galleries and full-size image viewer styles
-- app.js: mobile menu, scroll navigation, hero 3D viewer, and interactive project GLB viewers
-- assets/images/: optimized WebP versions of the images from your ZIP
-- assets/models/project1.glb and project2.glb: your original 3D models
+The website is a public static site hosted on Vercel. Supabase provides admin authentication, shared project records, and uploaded media. Only users with app_metadata.role = "admin" can edit. The Supabase publishable/anon key is intended to be public; never put the service_role/secret key in website files, Vercel client-side environment variables, or git.
 
-HOW TO RUN (recommended)
-1. Extract nayon-portfolio.zip.
-2. Open the folder in Visual Studio Code.
-3. Install the VS Code extension “Live Server” (or use any local static web server).
-4. Right-click index.html and choose “Open with Live Server”.
-   The 3D model viewer uses ES modules and usually will not work if index.html is opened directly as file://.
-5. Internet is needed for Google Fonts and the Three.js CDN import map.
+QUICK SETUP
+1. Create a Supabase project.
+2. In Supabase SQL Editor, run supabase/setup.sql.
+   If you already have a project table, rerun this script after updating the site files to add the project category column.
+3. In Authentication > Users, create the administrator using an email address and a confirmed phone number in international format (+880...). Set a strong password.
+4. In SQL Editor, assign the admin role to that exact account:
+   update auth.users
+   set raw_app_meta_data = coalesce(raw_app_meta_data, '{}'::jsonb) || '{"role":"admin"}'::jsonb
+   where email = 'YOUR_ADMIN_EMAIL';
+   Verify exactly one row was updated. Do not put admin role in user_metadata.
+5. In Authentication settings, disable public sign-ups after creating your admin account.
+6. In Authentication > URL Configuration, set the Site URL to your Vercel domain and add the production and preview domains you use to Redirect URLs.
+7. In Authentication > Providers, enable Phone only if phone/password sign-in and SMS reset are desired. Configure an SMS provider such as Twilio or another supported provider and add rate limits/CAPTCHA for production.
+8. In Authentication > Email Templates > Reset Password, use the OTP token in the message (for example: "Your password reset code is {{ .Token }}") so the in-site code form can verify it. Configure custom SMTP for reliable production email delivery.
+9. Copy the Supabase Project URL and publishable/anon key from Project Settings > API into supabase-config.js. These two values are public. Do not copy a secret/service_role key.
+10. Redeploy the static site on Vercel. The Login, Add Project, Edit, Delete, password change, and recovery features will activate once the config is valid.
 
-HOW TO PUBLISH
-- GitHub Pages: upload the contents of this folder to a repository and enable Pages.
-- Netlify: drag the extracted folder into Netlify Drop, or connect your Git repository.
+LOGIN AND PASSWORD RECOVERY
+- Admin login accepts the registered email or confirmed phone number and password.
+- Forgot password accepts the registered email (email OTP) or confirmed phone in +country-code format (SMS OTP). Phone reset verifies an SMS sign-in OTP, checks the admin role, then sets a new password.
+- Supabase recovery email must use the OTP template above. SMS requires an enabled phone provider and may incur provider charges.
+- Passwords must meet Supabase Auth password policy. The UI asks for at least 12 characters with uppercase/lowercase, a number, and a symbol; configure the same policy in Supabase Auth.
 
-CUSTOMIZE
-- Change your name, role, intro and contact email in index.html.
-- Replace the placeholder social links with your real profile links.
-- Update the two project cards in the project-grid section of index.html. Each card's data-gallery attribute lists the three images shown in its gallery, and data-model selects its interactive GLB preview.
-- To use the other supplied model in the hero, change assets/models/project1.glb in app.js to assets/models/project2.glb.
-- The CV button is intentionally replaced by “Let’s talk”; add your CV PDF and a download link if you want a CV button.
-- Use your real email instead of hello@nayon.design before publishing.
+PROJECTS AND FILES
+- Public visitors can read the project list and public media.
+- Admin project edits are stored in the shared portfolio_projects table and appear for all visitors.
+- Admins can assign projects to Eyewear Design, Product Design, Character Design, or 2D Design. Existing projects default to Eyewear Design.
+- Project titles under each image can be changed with the admin Edit action. Category grids show two rows at a time; Show more expands the selected category.
+- Project uploads go to the public "portfolio" bucket. Upload size is limited to 25 MB per file. The bucket policy in setup.sql allows only admin app_metadata roles to upload/edit/delete.
+- Existing Eyewear cards remain in index.html. Their cloud overrides are keyed by static IDs; newly created projects use generated UUIDs.
 
-NOTE
-The source ZIP's original images are included in optimized WebP format to keep the website download small. Both original GLB models are included.
+For Vercel, keep this a static deployment; no server/service-role key is required. After changing Supabase Auth settings, redeploy or refresh the site and test login, email/SMS recovery, uploads, and public viewing.

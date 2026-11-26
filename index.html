@@ -9,6 +9,8 @@
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="branding.css">
   <link rel="stylesheet" href="gallery.css">
+  <link rel="stylesheet" href="projects-admin.css">
+  <link rel="stylesheet" href="scroll-effects.css">
   <script type="importmap">{"imports":{"three":"https://unpkg.com/three@0.161.0/build/three.module.js","three/addons/":"https://unpkg.com/three@0.161.0/examples/jsm/"}}</script>
 </head>
 <body>
@@ -17,32 +19,99 @@
     <a class="brand" href="#home" aria-label="Waheduzzaman Nayon home"><img class="brand-logo" src="assets/images/waheduzzaman-nayon-logo.png" alt=""><span class="brand-copy"><strong>WAHEDUZZAMAN NAYON</strong><small>3D Designer</small></span></a>
     <button class="menu-toggle" id="menuToggle" aria-label="Toggle menu"><span></span><span></span></button>
     <nav id="mainNav"><a class="active" href="#home">Home</a><a href="#projects">Projects</a><a href="#contact">Contact</a></nav>
-    <a class="header-cta" href="#contact">Let’s talk <span>↗</span></a>
+    <div class="header-actions"><button class="header-admin-button" id="adminLoginButton" type="button">Admin Login</button><button class="header-admin-button" id="changePasswordButton" type="button" hidden>Change Password</button><button class="header-admin-button" id="adminLogoutButton" type="button" hidden>Log out</button><a class="header-cta" href="#contact">Let’s talk <span>↗</span></a></div>
   </header>
   <main>
+    <div class="home-intro-stage">
     <section class="hero" id="home">
       <div class="hero-copy"><p class="hello">Hello, I'm</p><h1>WAHEDUZZAMAN<br><span>NAYON</span></h1><p class="role-line">3D Designer <i></i> Product Visualizer <i></i> Creative Thinker</p><p class="intro">I turn ideas into tactile, memorable visuals through thoughtful 3D design, product storytelling, and immersive rendering.</p><div class="hero-actions"><a class="button button-light" href="#projects">Explore my work <span>↘</span></a></div></div>
       <div class="hero-art" aria-label="Interactive 3D model viewer"><div class="art-glow"></div><div id="modelViewer"><img class="hero-fallback" src="assets/images/project1-1.webp" alt="3D product design render"><div class="viewer-loading" id="viewerLoading"><span class="loader"></span><span>Preparing 3D preview</span></div></div></div>
     </section>
-    <section class="projects section-wrap" id="projects"><div class="section-heading"><div><h2>Eyewear Project</h2></div></div>
-      <div class="project-grid">
-        <a class="project-card project-wide" href="#projects" data-project="Premium Optical Eyewear" data-details="Unique Frame Geometry|Accurate Lens Shape &amp; Fitting|Nose Bridge &amp; Nose Pads|Temple &amp; Hinge Design|Premium Product Rendering" data-model="assets/models/project1.glb" data-gallery="assets/images/project1-1.webp,assets/images/project1-2.webp,assets/images/project1-3.webp"><div class="project-image"><img src="assets/images/project1-1.webp" alt="Premium optical eyewear render" loading="lazy"><span class="project-number">01</span><span class="project-arrow">↗</span></div><div class="project-meta"><div><h3>Premium Optical Eyewear</h3></div><span class="meta-arrow">↗</span></div></a>
-        <a class="project-card" href="#projects" data-project="Parametric / 3D Printed Eyewear" data-details="Innovative Parametric Geometry|Lightweight Structure|Lattice Design|Wall Thickness Optimization|3D Printing-ready Model" data-model="assets/models/project2.glb" data-gallery="assets/images/project2-1.webp,assets/images/project2-2.webp,assets/images/project2-3.webp"><div class="project-image"><img src="assets/images/project2-1.webp" alt="Parametric 3D printed eyewear render" loading="lazy"><span class="project-number">02</span><span class="project-arrow">↗</span></div><div class="project-meta"><div><h3>Parametric / 3D Printed Eyewear</h3></div><span class="meta-arrow">↗</span></div></a>
-        <a class="project-card project-service-card" href="#projects" data-project="Sports / Performance Eyewear" data-details="Wraparound Frame Design|Ergonomic Nose Support|Curved Lens Fitting|Functional Temple Design|Material &amp; Color Variations" data-gallery="assets/images/project1-4.webp"><div class="project-image"><img src="assets/images/project1-4.webp" alt="Sports and performance eyewear concept" loading="lazy"><span class="project-number">03</span><span class="project-arrow">↗</span></div><div class="project-meta"><div><h3>Sports / Performance Eyewear</h3></div><span class="meta-arrow">↗</span></div></a>
-        <a class="project-card project-service-card" href="#projects" data-project="Technical Eyewear Engineering" data-details="Exploded View|Hinge Mechanism|Lens &amp; Frame Assembly|Technical Drawings|Dimension &amp; Tolerance" data-gallery="assets/images/project2-4.webp"><div class="project-image"><img src="assets/images/project2-4.webp" alt="Technical eyewear engineering concept" loading="lazy"><span class="project-number">04</span><span class="project-arrow">↗</span></div><div class="project-meta"><div><h3>Technical Eyewear Engineering</h3></div><span class="meta-arrow">↗</span></div></a>
+    <div class="project-category-list section-wrap" role="group" aria-label="Project categories">
+      <button class="project-category-button" type="button" data-category="eyewear" aria-pressed="true">EYEWEAR DESIGN</button>
+      <button class="project-category-button" type="button" data-category="product" aria-pressed="false">PRODUCT DESIGN</button>
+      <button class="project-category-button" type="button" data-category="character" aria-pressed="false">CHARACTER DESIGN</button>
+      <button class="project-category-button" type="button" data-category="2d" aria-pressed="false">2D DESIGN</button>
+    </div>
+    <section class="projects section-wrap" id="projects"><div class="section-heading"><div><h2 id="projectCategoryTitle">EYEWEAR DESIGN</h2></div><button class="button button-light add-project-button" id="addProjectButton" type="button" hidden>+ Add Project</button></div>
+      <div class="project-grid" id="projectGrid">
+        <a class="project-card project-wide" href="#projects" data-category="eyewear" data-project-id="static-premium-optical-eyewear" data-project="Premium Optical Eyewear" data-details="Unique Frame Geometry|Accurate Lens Shape &amp; Fitting|Nose Bridge &amp; Nose Pads|Temple &amp; Hinge Design|Premium Product Rendering" data-model="assets/models/project1.glb" data-gallery="assets/images/project1-1.webp,assets/images/project1-2.webp,assets/images/project1-3.webp"><div class="project-image"><img src="assets/images/project1-1.webp" alt="Premium optical eyewear render" loading="lazy"><span class="project-number">01</span><span class="project-arrow">↗</span></div><div class="project-meta"><div><h3>Premium Optical Eyewear</h3></div><span class="meta-arrow">↗</span></div></a>
+        <a class="project-card" href="#projects" data-category="eyewear" data-project-id="static-parametric-eyewear" data-project="Parametric / 3D Printed Eyewear" data-details="Innovative Parametric Geometry|Lightweight Structure|Lattice Design|Wall Thickness Optimization|3D Printing-ready Model" data-model="assets/models/project2.glb" data-gallery="assets/images/project2-1.webp,assets/images/project2-2.webp,assets/images/project2-3.webp"><div class="project-image"><img src="assets/images/project2-1.webp" alt="Parametric 3D printed eyewear render" loading="lazy"><span class="project-number">02</span><span class="project-arrow">↗</span></div><div class="project-meta"><div><h3>Parametric / 3D Printed Eyewear</h3></div><span class="meta-arrow">↗</span></div></a>
+        <a class="project-card project-service-card" href="#projects" data-category="eyewear" data-project-id="static-sports-eyewear" data-project="Sports / Performance Eyewear" data-details="Wraparound Frame Design|Ergonomic Nose Support|Curved Lens Fitting|Functional Temple Design|Material &amp; Color Variations" data-gallery="assets/images/project1-4.webp"><div class="project-image"><img src="assets/images/project1-4.webp" alt="Sports and performance eyewear concept" loading="lazy"><span class="project-number">03</span><span class="project-arrow">↗</span></div><div class="project-meta"><div><h3>Sports / Performance Eyewear</h3></div><span class="meta-arrow">↗</span></div></a>
+        <a class="project-card project-service-card" href="#projects" data-category="eyewear" data-project-id="static-technical-eyewear" data-project="Technical Eyewear Engineering" data-details="Exploded View|Hinge Mechanism|Lens &amp; Frame Assembly|Technical Drawings|Dimension &amp; Tolerance" data-gallery="assets/images/project2-4.webp"><div class="project-image"><img src="assets/images/project2-4.webp" alt="Technical eyewear engineering concept" loading="lazy"><span class="project-number">04</span><span class="project-arrow">↗</span></div><div class="project-meta"><div><h3>Technical Eyewear Engineering</h3></div><span class="meta-arrow">↗</span></div></a>
       </div>
+      <p class="project-category-empty" id="projectCategoryEmpty" role="status" hidden>No projects in this category yet. Add projects from the admin panel to show them here.</p>
+      <button class="button button-light project-show-more-button" id="showMoreProjects" type="button" aria-controls="projectGrid" aria-expanded="false" hidden>Show more</button>
+      <p class="project-manager-status" id="projectManagerStatus" role="status"></p>
     </section>
-    <section class="projects section-wrap hair-collection" id="hair-collection" aria-labelledby="hairCollectionTitle"><div class="section-heading"><div><h2 id="hairCollectionTitle">Hair Collection</h2></div></div>
-      <div class="project-grid" aria-label="Hair Collection image placeholders">
-        <div class="project-image hair-placeholder" role="img" aria-label="Hair Collection image placeholder 1"></div>
-        <div class="project-image hair-placeholder" role="img" aria-label="Hair Collection image placeholder 2"></div>
-        <div class="project-image hair-placeholder" role="img" aria-label="Hair Collection image placeholder 3"></div>
-        <div class="project-image hair-placeholder" role="img" aria-label="Hair Collection image placeholder 4"></div>
+    </div>
+    <dialog class="project-editor-dialog" id="projectEditorDialog" aria-labelledby="projectEditorTitle">
+      <form class="project-editor" id="projectEditorForm">
+        <header class="project-editor-heading"><div><p class="section-kicker">YOUR PORTFOLIO</p><h2 id="projectEditorTitle">Create a new project</h2><p>Choose a category to show this project in the matching section.</p></div><button class="dialog-close" id="closeProjectEditor" type="button" aria-label="Close project form">×</button></header>
+        <label>Project name<input name="title" type="text" maxlength="80" placeholder="e.g. Modern Chair Concept"></label>
+        <label>Category<select name="category" required><option value="eyewear">Eyewear Design</option><option value="product">Product Design</option><option value="character">Character Design</option><option value="2d">2D Design</option></select></label>
+        <label>Description<textarea name="description" rows="3" maxlength="500" placeholder="Write a short description of this project"></textarea></label>
+        <label>Cover image path or URL<input name="cover" type="text" placeholder="assets/images/my-project.webp"><small>Or upload a cover image below. Uploaded media is public.</small></label>
+        <label>Upload cover image<input name="coverFile" type="file" accept="image/avif,image/gif,image/jpeg,image/png,image/webp"></label>
+        <label>Gallery image paths <span>(one path or URL per line)</span><textarea name="gallery" rows="4" placeholder="assets/images/my-project.webp&#10;https://example.com/my-project-detail.webp"></textarea><small>Leave blank to use the cover image only.</small></label>
+        <label>Upload gallery images<input name="galleryFiles" type="file" accept="image/avif,image/gif,image/jpeg,image/png,image/webp" multiple></label>
+        <label>Project details <span>(one item per line)</span><textarea name="details" rows="4" placeholder="Product concept&#10;Material and finish&#10;Final render"></textarea></label>
+        <label>Optional 3D model URL<input name="model" type="text" placeholder="https://example.com/model.glb"></label>
+        <label>Upload GLB 3D model<input name="modelFile" type="file" accept=".glb,model/gltf-binary,application/octet-stream"></label>
+        <p class="project-editor-storage-note">Saved projects are public. Only the authenticated administrator can edit them.</p>
+        <p class="project-editor-error" id="projectEditorError" role="alert"></p>
+        <button class="button button-light project-editor-submit" type="submit">Save Changes <span>↗</span></button>
+      </form>
+    </dialog>
+    <dialog class="admin-dialog" id="adminDialog" aria-labelledby="adminDialogTitle">
+      <div class="admin-dialog-content">
+        <header class="project-editor-heading"><div><p class="section-kicker">SECURE ADMIN</p><h2 id="adminDialogTitle">Admin Login</h2><p id="adminDialogDescription">Sign in with your registered email or phone number and password.</p></div><button class="dialog-close" id="closeAdminDialog" type="button" aria-label="Close admin dialog">×</button></header>
+        <form id="adminLoginForm" class="admin-form">
+          <label>Email or phone<input name="username" autocomplete="username" placeholder="you@example.com or +8801..." required></label>
+          <label>Password<input name="password" type="password" autocomplete="current-password" required></label>
+          <p class="admin-form-error" id="adminLoginError" role="alert"></p>
+          <button class="button button-light" type="submit">Log in</button>
+          <button class="admin-text-button" id="showForgotPassword" type="button">Forgot password?</button>
+        </form>
+        <form id="forgotPasswordForm" class="admin-form" hidden>
+          <label>Registered email or phone<input name="username" autocomplete="username" placeholder="you@example.com or +8801713900909" required></label>
+          <button class="button button-light" id="sendResetCode" type="button">Send verification code</button>
+          <p class="admin-form-hint" id="resetDeliveryMessage" role="status"></p>
+          <label>Verification code<input name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" required></label>
+          <label>New password<input name="newPassword" type="password" autocomplete="new-password" minlength="12" required><small class="admin-password-hint">At least 12 characters with uppercase, lowercase, a number, and a symbol.</small></label>
+          <label>Confirm new password<input name="confirmPassword" type="password" autocomplete="new-password" minlength="12" required></label>
+          <p class="admin-form-error" id="forgotPasswordError" role="alert"></p>
+          <button class="button button-light" type="submit">Set new password</button>
+          <button class="admin-text-button" id="backToLogin" type="button">Back to login</button>
+        </form>
+        <form id="changePasswordForm" class="admin-form" hidden>
+          <label>Current password<input name="currentPassword" type="password" autocomplete="current-password" required></label>
+          <label>New password<input name="newPassword" type="password" autocomplete="new-password" minlength="12" required><small class="admin-password-hint">At least 12 characters with uppercase, lowercase, a number, and a symbol.</small></label>
+          <label>Confirm new password<input name="confirmPassword" type="password" autocomplete="new-password" minlength="12" required></label>
+          <p class="admin-form-error" id="changePasswordError" role="alert"></p>
+          <button class="button button-light" type="submit">Change password</button>
+        </form>
       </div>
-    </section>
-    <dialog class="project-dialog" id="projectDialog" aria-labelledby="projectDialogTitle"><div class="project-dialog-content"><header class="project-dialog-header"><div><p class="section-kicker">PROJECT GALLERY</p><h2 id="projectDialogTitle"></h2><div class="project-dialog-details"><p>PROJECT DETAILS</p><ul id="projectDialogPoints"></ul></div></div><button class="dialog-close" type="button" aria-label="Close project gallery">×</button></header><section class="project-model-section" id="projectModelSection" aria-label="Interactive 3D project model"><div class="project-model-heading"><span>INTERACTIVE 3D MODEL</span><span>↔ DRAG TO ROTATE · SCROLL TO ZOOM</span></div><div id="projectModelViewer"><p id="projectModelStatus" role="status">Preparing 3D model preview…</p></div></section><img class="project-preview-image" id="projectPreviewImage" alt="" hidden><div class="project-gallery" id="projectGallery"></div><p class="gallery-hint">Select an image to view it full size.</p></div></dialog>
+    </dialog>
+    <dialog class="project-dialog" id="projectDialog" aria-labelledby="projectDialogTitle"><div class="project-dialog-content"><header class="project-dialog-header"><div><p class="section-kicker">PROJECT GALLERY</p><h2 id="projectDialogTitle"></h2><p class="project-dialog-description" id="projectDialogDescription"></p><div class="project-dialog-details"><p>PROJECT DETAILS</p><ul id="projectDialogPoints"></ul></div></div><button class="dialog-close" type="button" aria-label="Close project gallery">×</button></header><section class="project-model-section" id="projectModelSection" aria-label="Interactive 3D project model"><div class="project-model-heading"><span>INTERACTIVE 3D MODEL</span><span>↔ DRAG TO ROTATE · SCROLL TO ZOOM</span></div><div id="projectModelViewer"><p id="projectModelStatus" role="status">Preparing 3D model preview…</p></div></section><img class="project-preview-image" id="projectPreviewImage" alt="" hidden><div class="project-gallery" id="projectGallery"></div><p class="gallery-hint">Select an image to view it full size.</p></div></dialog>
     <dialog class="image-dialog" id="imageDialog" aria-label="Full-size project image"><button class="dialog-close image-dialog-close" type="button" aria-label="Close full-size image">×</button><button class="image-slide image-slide-previous" id="previousProjectImage" type="button" aria-label="Previous image">‹</button><img id="fullProjectImage" alt=""><span class="image-slide-count" id="projectImageCount" aria-live="polite"></span><button class="image-slide image-slide-next" id="nextProjectImage" type="button" aria-label="Next image">›</button></dialog>
     <section class="contact section-wrap" id="contact"><div class="contact-orb"></div><div class="contact-main"><div class="contact-intro"><h2>Have an idea?<br><em>Let’s shape it.</em></h2><p class="contact-text">Have a product to visualize or a concept to explore? I’d love to hear what you’re working on.</p><a class="button button-light" href="mailto:hello@nayon.design">Start a conversation <span>↗</span></a></div><div class="contact-about"><p>I’m a 3D designer focused on bringing product ideas to life. From clean geometry and considered materials to lighting and final presentation, I enjoy every stage of turning a concept into a compelling visual.</p><p>My approach combines technical precision with a strong eye for form, detail and atmosphere.</p></div></div></section>
   </main>
+  <script src="supabase-config.js"></script>
   <script type="module" src="app.js"></script>
+  <script>
+    (() => {
+      const adminButton = document.querySelector('#adminLoginButton');
+      const adminDialog = document.querySelector('#adminDialog');
+      if (!adminButton || !adminDialog) return;
+      adminButton.addEventListener('click', () => {
+        if (window.__nayonAppInitialized || adminDialog.open) return;
+        adminDialog.showModal();
+      });
+      document.querySelector('#closeAdminDialog')?.addEventListener('click', () => adminDialog.close());
+      adminDialog.addEventListener('click', event => {
+        if (event.target === adminDialog) adminDialog.close();
+      });
+    })();
+  </script>
 </body></html>

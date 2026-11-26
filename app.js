@@ -1,6 +1,21 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import {
+  changePassword,
+  deleteProject,
+  getProjects,
+  isAdminSignedIn,
+  isSupabaseConfigured,
+  requestPasswordReset,
+  restoreAdminSession,
+  saveProject,
+  signIn,
+  signOut,
+  confirmPasswordReset,
+  uploadFile,
+  validateAdminPassword
+} from './supabase-services.js';
 
 const viewer = document.querySelector('#modelViewer');
 const loading = document.querySelector('#viewerLoading');
@@ -15,6 +30,7 @@ nav?.querySelectorAll('a').forEach(link => link.addEventListener('click', () => 
 
 const projectDialog = document.querySelector('#projectDialog');
 const projectDialogTitle = document.querySelector('#projectDialogTitle');
+const projectDialogDescription = document.querySelector('#projectDialogDescription');
 const projectDialogPoints = document.querySelector('#projectDialogPoints');
 const projectGallery = document.querySelector('#projectGallery');
 const projectModelSection = document.querySelector('#projectModelSection');
@@ -27,6 +43,21 @@ let activeProjectImage = 0;
 const projectModelViewer = document.querySelector('#projectModelViewer');
 const projectModelStatus = document.querySelector('#projectModelStatus');
 const projectModels = new Map();
+const projectEditorDialog = document.querySelector('#projectEditorDialog');
+const projectEditorForm = document.querySelector('#projectEditorForm');
+const projectEditorError = document.querySelector('#projectEditorError');
+const projectGrid = document.querySelector('#projectGrid');
+const projectCategoryButtons = document.querySelectorAll('.project-category-button');
+const projectCategoryTitle = document.querySelector('#projectCategoryTitle');
+const projectCategoryEmpty = document.querySelector('#projectCategoryEmpty');
+const projectShowMoreButton = document.querySelector('#showMoreProjects');
+const projectManagerStatus = document.querySelector('#projectManagerStatus');
+let activeProjectCategory = 'eyewear';
+const expandedProjectCategories = new Set();
+let customProjects = [];
+let editingProjectId = null;
+let editingNewProject = false;
+let savedProjects = [];
 let projectModelRenderer;
 let projectModelScene;
 let projectModelCamera;
@@ -162,51 +193,540 @@ function loadProjectModel(path) {
   });
 }
 
-document.querySelectorAll('.project-card[data-project]').forEach(card => {
-  card.addEventListener('click', event => {
-    event.preventDefault();
-    projectDialogTitle.textContent = card.dataset.project;
-    projectDialogPoints.replaceChildren(...card.dataset.details.split('|').map(detail => {
-      const item = document.createElement('li');
-      item.textContent = detail;
-      return item;
-    }));
-    projectGallery.replaceChildren();
-    projectImagePaths.splice(0, projectImagePaths.length, ...card.dataset.gallery.split(','));
-
-    projectImagePaths.forEach((src, index) => {
-      const imageButton = document.createElement('button');
-      const image = document.createElement('img');
-      const alt = `${card.dataset.project} render ${index + 1}`;
-
-      imageButton.type = 'button';
-      imageButton.className = 'gallery-image';
-      imageButton.setAttribute('aria-label', `View ${alt} full size`);
-      image.src = src;
-      image.alt = alt;
-      image.loading = 'eager';
-      imageButton.appendChild(image);
-      imageButton.addEventListener('click', () => {
-        showProjectImage(index);
-        imageDialog.showModal();
-      });
-      projectGallery.appendChild(imageButton);
-    });
-
-    projectDialog.showModal();
-    if (card.dataset.model) {
-      projectModelSection.hidden = false;
-      projectPreviewImage.hidden = true;
-      loadProjectModel(card.dataset.model);
-    } else {
-      requestedProjectModel = null;
-      projectModelRenderer?.setAnimationLoop(null);
-      projectModelSection.hidden = true;
-      projectPreviewImage.src = projectImagePaths[0];
-      projectPreviewImage.alt = `${card.dataset.project} preview`;
-      projectPreviewImage.hidden = false;
-    }
+function applyProjectCategory(category = activeProjectCategory) {
+  const selectedButton = Array.from(projectCategoryButtons).find(button => button.dataset.category === category);
+  if (!selectedButton) return;
+  activeProjectCategory = category;
+  projectCategoryButtons.forEach(button => {
+    button.setAttribute('aria-pressed', String(button === selectedButton));
   });
+  projectCategoryTitle.textContent = selectedButton.textContent.trim();
+
+  const cards = Array.from(projectGrid.querySelectorAll('.project-card'));
+  const matchingCards = cards.filter(card =>
+    card.dataset.deleted !== 'true' && (card.dataset.category || 'eyewear') === category
+  );
+  const columnCount = Math.max(1, getComputedStyle(projectGrid).gridTemplateColumns.split(' ').filter(Boolean).length);
+  const rowLimit = columnCount * 2;
+  const expanded = expandedProjectCategories.has(category);
+  const shownCards = new Set(expanded ? matchingCards : matchingCards.slice(0, rowLimit));
+
+  cards.forEach(card => {
+    card.hidden = !shownCards.has(card);
+  });
+  projectCategoryEmpty.hidden = matchingCards.length > 0;
+  projectShowMoreButton.hidden = matchingCards.length <= rowLimit;
+  projectShowMoreButton.setAttribute('aria-expanded', String(expanded));
+  projectShowMoreButton.textContent = expanded ? 'Show less' : 'Show more';
+}
+
+function renderCustomProjects() {
+  projectGrid.querySelectorAll('.custom-project-card').forEach(card => card.remove());
+
+  customProjects.forEach((project, index) => {
+    const card = document.createElement('article');
+    const link = document.createElement('a');
+    const imageBox = document.createElement('div');
+    const image = document.createElement('img');
+    const number = document.createElement('span');
+    const arrow = document.createElement('span');
+    const meta = document.createElement('div');
+    const titleWrap = document.createElement('div');
+    const title = document.createElement('h3');
+    const metaArrow = document.createElement('span');
+    const actions = document.createElement('div');
+    const editButton = document.createElement('button');
+    const removeButton = document.createElement('button');
+
+    card.className = 'project-card custom-project-card';
+    card.dataset.projectId = project.id;
+    card.dataset.category = project.category || 'eyewear';
+    card.dataset.project = project.title;
+    card.dataset.description = project.description || '';
+    card.dataset.details = project.details.join('|');
+    card.dataset.gallery = project.gallery.join(',');
+    if (project.model) card.dataset.model = project.model;
+    link.className = 'custom-project-link';
+    link.href = '#projects';
+    imageBox.className = 'project-image';
+    if (project.cover) {
+      image.src = project.cover;
+      image.alt = `${project.title} project cover`;
+      image.loading = 'lazy';
+    } else {
+      imageBox.classList.add('project-image-empty');
+      imageBox.setAttribute('aria-label', 'No cover image added yet');
+    }
+    number.className = 'project-number';
+    number.textContent = String(projectGrid.querySelectorAll('.project-card:not(.custom-project-card):not([hidden])').length + index + 1).padStart(2, '0');
+    arrow.className = 'project-arrow';
+    arrow.textContent = '↗';
+    meta.className = 'project-meta';
+    title.textContent = project.title;
+    metaArrow.className = 'meta-arrow';
+    metaArrow.textContent = '↗';
+    actions.className = 'custom-project-actions';
+    editButton.className = 'custom-project-edit';
+    editButton.type = 'button';
+    editButton.dataset.projectId = project.id;
+    editButton.setAttribute('aria-label', `Edit ${project.title}`);
+    editButton.textContent = 'Edit';
+    removeButton.className = 'custom-project-remove';
+    removeButton.type = 'button';
+    removeButton.dataset.projectId = project.id;
+    removeButton.setAttribute('aria-label', `Delete ${project.title}`);
+    removeButton.textContent = '×';
+    if (project.cover) imageBox.appendChild(image);
+    imageBox.append(number, arrow);
+    titleWrap.appendChild(title);
+    meta.append(titleWrap, metaArrow);
+    link.append(imageBox, meta);
+    actions.append(editButton, removeButton);
+    card.append(link, actions);
+    projectGrid.appendChild(card);
+  });
+  applyProjectCategory();
+  window.__nayonAppInitialized = true;
+  updateAdminControls();
+}
+
+function addAdminActions(card) {
+  card.classList.add('admin-managed-project');
+  let actions = card.querySelector('.custom-project-actions');
+  if (!actions) {
+    actions = document.createElement('div');
+    actions.className = 'custom-project-actions';
+    const editButton = document.createElement('button');
+    editButton.className = 'custom-project-edit';
+    editButton.type = 'button';
+    editButton.textContent = 'Edit';
+    const removeButton = document.createElement('button');
+    removeButton.className = 'custom-project-remove';
+    removeButton.type = 'button';
+    removeButton.textContent = '×';
+    actions.append(editButton, removeButton);
+    card.appendChild(actions);
+  }
+  const [editButton, removeButton] = actions.querySelectorAll('button');
+  editButton.dataset.projectId = card.dataset.projectId;
+  editButton.setAttribute('aria-label', `Edit ${card.dataset.project}`);
+  removeButton.dataset.projectId = card.dataset.projectId;
+  removeButton.setAttribute('aria-label', `Delete ${card.dataset.project}`);
+  actions.hidden = !isAdminSignedIn();
+}
+
+function updateAdminControls() {
+  const signedIn = isAdminSignedIn();
+  document.querySelector('#adminLoginButton').hidden = signedIn;
+  document.querySelector('#changePasswordButton').hidden = !signedIn;
+  document.querySelector('#adminLogoutButton').hidden = !signedIn;
+  document.querySelector('#addProjectButton').hidden = !signedIn;
+  projectGrid.querySelectorAll('.project-card').forEach(addAdminActions);
+}
+
+function cardToProject(card) {
+  if (!card) return null;
+  return {
+    id: card.dataset.projectId || '',
+    title: card.dataset.project || '',
+    category: card.dataset.category || 'eyewear',
+    description: card.dataset.description || '',
+    cover: card.querySelector('.project-image img')?.getAttribute('src') || '',
+    gallery: (card.dataset.gallery || '').split(',').map(path => path.trim()).filter(Boolean),
+    details: (card.dataset.details || '').split('|').map(detail => detail.trim()).filter(Boolean),
+    model: card.dataset.model || ''
+  };
+}
+
+function applySavedProjects() {
+  const savedById = new Map(savedProjects.map(project => [project.id, project]));
+  projectGrid.querySelectorAll('.project-card[data-project-id^="static-"]').forEach(card => {
+    const saved = savedById.get(card.dataset.projectId);
+    card.dataset.deleted = String(Boolean(saved?.deleted));
+    card.hidden = Boolean(saved?.deleted);
+    if (!saved || saved.deleted) return;
+    card.dataset.project = saved.title;
+    card.dataset.category = saved.category || 'eyewear';
+    card.dataset.description = saved.description || '';
+    card.dataset.details = (saved.details || []).join('|');
+    card.dataset.gallery = (saved.gallery || []).join(',');
+    if (saved.model) card.dataset.model = saved.model;
+    else delete card.dataset.model;
+    const imageBox = card.querySelector('.project-image');
+    let image = imageBox.querySelector('img');
+    if (saved.cover) {
+      if (!image) {
+        image = document.createElement('img');
+        image.loading = 'lazy';
+        imageBox.prepend(image);
+      }
+      image.src = saved.cover;
+      image.alt = `${saved.title} project cover`;
+      imageBox.classList.remove('project-image-empty');
+      imageBox.removeAttribute('aria-label');
+    } else {
+      image?.remove();
+      imageBox.classList.add('project-image-empty');
+      imageBox.setAttribute('aria-label', 'No cover image added yet');
+    }
+    const heading = card.querySelector('.project-meta h3');
+    if (heading) heading.textContent = saved.title;
+  });
+  customProjects = savedProjects.filter(project => !project.id.startsWith('static-') && !project.deleted);
+  renderCustomProjects();
+}
+
+async function refreshProjects() {
+  try {
+    savedProjects = await getProjects();
+    applySavedProjects();
+  } catch (error) {
+    console.error('Public project data could not be loaded.', error);
+    projectManagerStatus.textContent = 'Could not load online project updates. Showing the built-in projects.';
+  }
+}
+
+function openProjectCard(card) {
+  const title = card.dataset.project;
+  const details = (card.dataset.details || '').split('|').map(value => value.trim()).filter(Boolean);
+  projectDialogTitle.textContent = title;
+  projectDialogDescription.textContent = card.dataset.description || '';
+  projectDialogDescription.hidden = !card.dataset.description;
+  projectDialogPoints.replaceChildren(...details.map(detail => {
+    const item = document.createElement('li');
+    item.textContent = detail;
+    return item;
+  }));
+  projectGallery.replaceChildren();
+  projectImagePaths.splice(0, projectImagePaths.length, ...(card.dataset.gallery || '').split(',').map(path => path.trim()).filter(Boolean));
+
+  projectImagePaths.forEach((src, index) => {
+    const imageButton = document.createElement('button');
+    const image = document.createElement('img');
+    const alt = `${title} render ${index + 1}`;
+
+    imageButton.type = 'button';
+    imageButton.className = 'gallery-image';
+    imageButton.setAttribute('aria-label', `View ${alt} full size`);
+    image.src = src;
+    image.alt = alt;
+    image.loading = 'eager';
+    imageButton.appendChild(image);
+    imageButton.addEventListener('click', () => {
+      showProjectImage(index);
+      imageDialog.showModal();
+    });
+    projectGallery.appendChild(imageButton);
+  });
+
+  projectDialog.showModal();
+  if (card.dataset.model) {
+    projectModelSection.hidden = false;
+    projectPreviewImage.hidden = true;
+    loadProjectModel(card.dataset.model);
+  } else if (!projectImagePaths.length) {
+    requestedProjectModel = null;
+    projectModelRenderer?.setAnimationLoop(null);
+    projectModelSection.hidden = true;
+    projectPreviewImage.hidden = true;
+  } else {
+    requestedProjectModel = null;
+    projectModelRenderer?.setAnimationLoop(null);
+    projectModelSection.hidden = true;
+    projectPreviewImage.src = projectImagePaths[0];
+    projectPreviewImage.alt = `${title} preview`;
+    projectPreviewImage.hidden = false;
+  }
+}
+
+projectCategoryButtons.forEach(button => {
+  button.addEventListener('click', () => applyProjectCategory(button.dataset.category));
+});
+projectShowMoreButton.addEventListener('click', () => {
+  if (expandedProjectCategories.has(activeProjectCategory)) {
+    expandedProjectCategories.delete(activeProjectCategory);
+  } else {
+    expandedProjectCategories.add(activeProjectCategory);
+  }
+  applyProjectCategory();
+});
+let projectGridResizeFrame = 0;
+window.addEventListener('resize', () => {
+  cancelAnimationFrame(projectGridResizeFrame);
+  projectGridResizeFrame = requestAnimationFrame(() => applyProjectCategory());
+});
+applyProjectCategory();
+updateAdminControls();
+if (isSupabaseConfigured()) {
+  refreshProjects();
+  restoreAdminSession().then(restored => {
+    updateAdminControls();
+    if (restored) refreshProjects();
+  });
+}
+else {
+  document.querySelector('#adminLoginButton').title = 'Supabase setup is required before admin login.';
+}
+
+document.querySelector('#addProjectButton').addEventListener('click', () => {
+  if (!isAdminSignedIn()) return;
+  const project = {
+    id: `draft-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    title: 'New Project',
+    category: activeProjectCategory,
+    description: '',
+    cover: '',
+    gallery: [],
+    details: [],
+    model: ''
+  };
+  editingNewProject = true;
+  customProjects.push(project);
+  renderCustomProjects();
+  openProjectEditor(project);
+});
+
+function openProjectEditor(project) {
+  editingProjectId = project.id;
+  editingNewProject = project.id.startsWith('draft-');
+  projectEditorError.textContent = '';
+  projectEditorForm.reset();
+  projectEditorForm.elements.title.value = project.title;
+  projectEditorForm.elements.category.value = project.category || 'eyewear';
+  projectEditorForm.elements.description.value = project.description || '';
+  projectEditorForm.elements.cover.value = project.cover;
+  projectEditorForm.elements.gallery.value = project.gallery.join('\n');
+  projectEditorForm.elements.details.value = project.details.join('\n');
+  projectEditorForm.elements.model.value = project.model || '';
+  projectEditorForm.elements.coverFile.value = '';
+  projectEditorForm.elements.galleryFiles.value = '';
+  projectEditorForm.elements.modelFile.value = '';
+  projectEditorDialog.querySelector('#projectEditorTitle').textContent = 'Edit project';
+  projectEditorDialog.showModal();
+}
+
+function closeProjectEditor() {
+  projectEditorDialog.close();
+}
+
+document.querySelector('#closeProjectEditor').addEventListener('click', closeProjectEditor);
+projectEditorDialog.addEventListener('click', event => {
+  if (event.target === projectEditorDialog) closeProjectEditor();
+});
+projectEditorDialog.addEventListener('close', () => {
+  if (editingNewProject) {
+    customProjects = customProjects.filter(project => project.id !== editingProjectId);
+    renderCustomProjects();
+  }
+  editingProjectId = null;
+  editingNewProject = false;
+});
+
+projectEditorForm.addEventListener('submit', async event => {
+  event.preventDefault();
+  projectEditorError.textContent = '';
+  const submitButton = projectEditorForm.querySelector('[type="submit"]');
+  submitButton.disabled = true;
+  const formData = new FormData(projectEditorForm);
+  const projectIndex = customProjects.findIndex(project => project.id === editingProjectId);
+  try {
+    const existing = projectIndex >= 0
+      ? customProjects[projectIndex]
+      : cardToProject(projectGrid.querySelector(`.project-card[data-project-id="${CSS.escape(editingProjectId)}"]`));
+    if (!existing) throw new Error('This project could not be found. Close this form and try again.');
+
+    let cover = String(formData.get('cover') || '').trim();
+    let gallery = String(formData.get('gallery') || '').split(/[\n,]+/).map(path => path.trim()).filter(Boolean);
+    let model = String(formData.get('model') || '').trim();
+    const coverFile = formData.get('coverFile');
+    const galleryFiles = formData.getAll('galleryFiles').filter(file => file instanceof File && file.size);
+    const modelFile = formData.get('modelFile');
+    const selectedFiles = [coverFile, ...galleryFiles, modelFile].filter(file => file instanceof File && file.size);
+    if (selectedFiles.some(file => file.size > 25 * 1024 * 1024)) {
+      throw new Error('Each uploaded file must be 25 MB or smaller.');
+    }
+    if (coverFile instanceof File && coverFile.size) cover = await uploadFile(coverFile);
+    if (galleryFiles.length) gallery = [...gallery, ...await Promise.all(galleryFiles.map(uploadFile))];
+    if (modelFile instanceof File && modelFile.size) model = await uploadFile(modelFile);
+
+    const project = {
+      ...existing,
+      id: editingNewProject ? '' : editingProjectId,
+      title: String(formData.get('title') || '').trim() || 'New Project',
+      category: String(formData.get('category') || 'eyewear'),
+      description: String(formData.get('description') || '').trim(),
+      cover,
+      gallery: gallery.length ? gallery : (cover ? [cover] : []),
+      details: String(formData.get('details') || '').split('\n').map(detail => detail.trim()).filter(Boolean),
+      model
+    };
+    const saved = await saveProject(project);
+    if (editingNewProject) {
+      customProjects[projectIndex] = saved;
+      editingProjectId = saved.id;
+      editingNewProject = false;
+    } else if (projectIndex >= 0) {
+      customProjects[projectIndex] = saved;
+    }
+    savedProjects = [...savedProjects.filter(item => item.id !== saved.id), saved];
+    applySavedProjects();
+    projectManagerStatus.textContent = `“${saved.title}” saved and published.`;
+    projectEditorDialog.close();
+    editingProjectId = null;
+  } catch (error) {
+    console.error('The project could not be saved.', error);
+    projectEditorError.textContent = error.message || 'Could not save this project. Try again.';
+  } finally {
+    submitButton.disabled = false;
+  }
+});
+
+document.addEventListener('click', event => {
+  const editButton = event.target.closest('.custom-project-edit');
+  if (editButton) {
+    const project = customProjects.find(item => item.id === editButton.dataset.projectId)
+      || cardToProject(editButton.closest('.project-card'));
+    if (project && isAdminSignedIn()) openProjectEditor(project);
+    return;
+  }
+
+  const removeButton = event.target.closest('.custom-project-remove');
+  if (removeButton) {
+    const project = customProjects.find(item => item.id === removeButton.dataset.projectId)
+      || cardToProject(removeButton.closest('.project-card'));
+    if (!project || !isAdminSignedIn() || !window.confirm(`Remove "${project.title}" from the public site?`)) return;
+    deleteProject(project.id).then(() => {
+      savedProjects = project.id.startsWith('static-')
+        ? [...savedProjects.filter(item => item.id !== project.id), { id: project.id, deleted: true }]
+        : savedProjects.filter(item => item.id !== project.id);
+      applySavedProjects();
+      projectManagerStatus.textContent = `“${project.title}” removed from the public site.`;
+    }).catch(error => {
+      console.error('The project could not be removed.', error);
+      projectManagerStatus.textContent = error.message || 'Could not remove this project.';
+    });
+    return;
+  }
+
+  const card = event.target.closest('.custom-project-link, .project-card[data-project]:not(.custom-project-card)');
+  if (!card) return;
+  event.preventDefault();
+  openProjectCard(card.closest('.project-card') || card);
+});
+
+const adminDialog = document.querySelector('#adminDialog');
+const adminLoginForm = document.querySelector('#adminLoginForm');
+const forgotPasswordForm = document.querySelector('#forgotPasswordForm');
+const changePasswordForm = document.querySelector('#changePasswordForm');
+const adminDialogTitle = document.querySelector('#adminDialogTitle');
+const adminDialogDescription = document.querySelector('#adminDialogDescription');
+let resetUsername = '';
+
+function showAdminForm(form, title, description) {
+  [adminLoginForm, forgotPasswordForm, changePasswordForm].forEach(item => {
+    item.hidden = item !== form;
+  });
+  adminDialogTitle.textContent = title;
+  adminDialogDescription.textContent = description;
+}
+
+document.querySelector('#adminLoginButton').addEventListener('click', () => {
+  showAdminForm(adminLoginForm, 'Admin Login', 'Sign in with your registered email or phone number and password.');
+  adminDialog.showModal();
+});
+document.querySelector('#changePasswordButton').addEventListener('click', () => {
+  changePasswordForm.reset();
+  document.querySelector('#changePasswordError').textContent = '';
+  showAdminForm(changePasswordForm, 'Change Password', 'Choose a new password for your administrator account.');
+  adminDialog.showModal();
+});
+document.querySelector('#adminLogoutButton').addEventListener('click', async () => {
+  await signOut();
+  updateAdminControls();
+  projectManagerStatus.textContent = 'You have logged out of the admin panel.';
+});
+document.querySelector('#closeAdminDialog').addEventListener('click', () => adminDialog.close());
+adminDialog.addEventListener('click', event => {
+  if (event.target === adminDialog) adminDialog.close();
+});
+document.querySelector('#showForgotPassword').addEventListener('click', () => {
+  forgotPasswordForm.reset();
+  document.querySelector('#forgotPasswordError').textContent = '';
+  document.querySelector('#resetDeliveryMessage').textContent = '';
+  showAdminForm(forgotPasswordForm, 'Reset Password', 'A code will be sent to a verified recovery method on your account.');
+});
+document.querySelector('#backToLogin').addEventListener('click', () => {
+  showAdminForm(adminLoginForm, 'Admin Login', 'Sign in with your registered email or phone number and password.');
+});
+document.querySelector('#sendResetCode').addEventListener('click', async () => {
+  const username = forgotPasswordForm.elements.username.value.trim();
+  const message = document.querySelector('#resetDeliveryMessage');
+  const errorOutput = document.querySelector('#forgotPasswordError');
+  errorOutput.textContent = '';
+  try {
+    const channel = await requestPasswordReset(username);
+    resetUsername = username;
+    message.textContent = `If the account is registered, a verification code has been sent to the ${channel === 'email' ? 'email address' : 'phone number'} you entered.`;
+  } catch (error) {
+    errorOutput.textContent = error.message || 'Could not send the verification code.';
+  }
+});
+adminLoginForm.addEventListener('submit', async event => {
+  event.preventDefault();
+  const errorOutput = document.querySelector('#adminLoginError');
+  errorOutput.textContent = '';
+  try {
+    await signIn(adminLoginForm.elements.username.value, adminLoginForm.elements.password.value);
+    await refreshProjects();
+    updateAdminControls();
+    adminDialog.close();
+    projectManagerStatus.textContent = 'Admin login successful. Your edits will be published for everyone.';
+  } catch (error) {
+    console.error('Administrator sign-in failed.', error);
+    errorOutput.textContent = error.message || 'Could not sign in.';
+  }
+});
+forgotPasswordForm.addEventListener('submit', async event => {
+  event.preventDefault();
+  const errorOutput = document.querySelector('#forgotPasswordError');
+  errorOutput.textContent = '';
+  try {
+    const newPassword = forgotPasswordForm.elements.newPassword.value;
+    const confirmPassword = forgotPasswordForm.elements.confirmPassword.value;
+    validateAdminPassword(newPassword);
+    if (newPassword !== confirmPassword) {
+      throw new Error('New password and confirmation do not match.');
+    }
+    await confirmPasswordReset(
+      resetUsername || forgotPasswordForm.elements.username.value.trim(),
+      forgotPasswordForm.elements.code.value,
+      newPassword
+    );
+    showAdminForm(adminLoginForm, 'Password Updated', 'Your password has been changed. Sign in with your new password.');
+  } catch (error) {
+    errorOutput.textContent = error.message || 'Could not reset the password.';
+  }
+});
+changePasswordForm.addEventListener('submit', async event => {
+  event.preventDefault();
+  const errorOutput = document.querySelector('#changePasswordError');
+  errorOutput.textContent = '';
+  try {
+    const newPassword = changePasswordForm.elements.newPassword.value;
+    const confirmPassword = changePasswordForm.elements.confirmPassword.value;
+    validateAdminPassword(newPassword);
+    if (newPassword !== confirmPassword) {
+      throw new Error('New password and confirmation do not match.');
+    }
+    await changePassword(
+      changePasswordForm.elements.currentPassword.value,
+      newPassword
+    );
+    changePasswordForm.reset();
+    errorOutput.textContent = 'Password changed successfully.';
+  } catch (error) {
+    errorOutput.textContent = error.message || 'Could not change the password.';
+  }
 });
 
 document.querySelector('#projectDialog .dialog-close').addEventListener('click', () => projectDialog.close());

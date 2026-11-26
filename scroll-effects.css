@@ -1,0 +1,134 @@
+:root {
+  --site-header-height: 84px;
+}
+
+.home-intro-stage {
+  position: relative;
+  isolation: isolate;
+}
+
+.site-header {
+  position: sticky;
+  top: 0;
+  height: var(--site-header-height);
+}
+
+.hero {
+  position: sticky;
+  top: var(--site-header-height);
+  z-index: 0;
+  height: calc(100vh - var(--site-header-height));
+  min-height: 610px;
+}
+
+.project-category-list + .projects {
+  position: relative;
+  z-index: 1;
+  background: var(--bg);
+  transform-origin: center top;
+  animation: rise-and-turn linear both;
+  animation-timeline: view();
+  animation-range: entry 0% entry 60%;
+}
+
+.project-category-list {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding-top: 30px;
+}
+
+.project-category-button {
+  padding: 11px 17px;
+  border: 1px solid rgba(255, 255, 255, .13);
+  border-radius: 999px;
+  color: #d7dce5;
+  background: #11141a;
+  font: 600 10px/1.2 var(--font);
+  letter-spacing: .04em;
+  cursor: pointer;
+  transition: color .2s, background .2s, border-color .2s, transform .2s;
+}
+
+.project-category-button:hover {
+  border-color: rgba(255, 255, 255, .4);
+  transform: translateY(-2px);
+}
+
+.project-category-button[aria-pressed="true"] {
+  border-color: #f2f4f8;
+  color: #0b0d11;
+  background: #f2f4f8;
+}
+
+.project-category-button:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 3px;
+}
+
+.home-intro-stage > .projects {
+  padding-top: 35px;
+}
+
+#projectGrid .project-card[hidden],
+#projectCategoryEmpty[hidden] {
+  display: none;
+}
+
+.project-category-empty {
+  margin: 20px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.project-show-more-button {
+  display: flex;
+  margin: 32px auto 0;
+  border: 0;
+  cursor: pointer;
+}
+
+.project-show-more-button[hidden] {
+  display: none;
+}
+
+.hair-collection {
+  position: relative;
+  z-index: 1;
+  background: var(--bg);
+}
+
+@keyframes rise-and-turn {
+  from {
+    transform: perspective(1200px) translate3d(0, 8vh, 0) rotateX(3deg);
+  }
+
+  to {
+    transform: perspective(1200px) translate3d(0, 0, 0) rotateX(0);
+  }
+}
+
+@media (max-width: 700px) {
+  :root {
+    --site-header-height: 70px;
+  }
+
+  .site-header {
+    height: var(--site-header-height);
+  }
+
+  .hero {
+    height: auto;
+    min-height: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .project-category-list + .projects {
+    animation: none;
+  }
+}
