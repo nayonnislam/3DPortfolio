@@ -20,7 +20,7 @@
     <a class="brand" href="#home" aria-label="Waheduzzaman Nayon home"><img class="brand-logo" src="assets/images/waheduzzaman-nayon-logo.png" alt=""><span class="brand-copy"><strong>WAHEDUZZAMAN NAYON</strong><small>3D Designer</small></span></a>
     <button class="menu-toggle" id="menuToggle" aria-label="Toggle menu"><span></span><span></span></button>
     <nav id="mainNav"><a class="active" href="#home">Home</a><a href="#projects">Projects</a><a href="#contact">Contact</a></nav>
-    <div class="header-actions"><button class="header-admin-button" id="adminLoginButton" type="button">Admin Login</button><a class="header-cta" href="#contact">Let’s talk <span>↗</span></a></div>
+    <div class="header-actions"><button class="header-admin-button" id="adminLoginButton" type="button">Admin Login</button><button class="header-admin-button admin-settings-trigger" id="adminSettingsButton" type="button" hidden><span aria-hidden="true">⚙</span> Settings</button><a class="header-cta" href="#contact">Let’s talk <span>↗</span></a></div>
   </header>
   <main>
     <div class="home-intro-stage">
@@ -34,7 +34,7 @@
       <button class="project-category-button" type="button" data-category="character" aria-pressed="false">CHARACTER DESIGN</button>
       <button class="project-category-button" type="button" data-category="2d" aria-pressed="false">2D DESIGN</button>
     </div>
-    <section class="projects section-wrap" id="projects"><div class="section-heading"><div><h2 id="projectCategoryTitle">EYEWEAR DESIGN</h2></div><button class="button button-light add-project-button" id="addProjectButton" type="button" hidden>+ Add Project</button></div>
+    <section class="projects section-wrap" id="projects"><div class="section-heading"><div><h2 id="projectCategoryTitle">EYEWEAR DESIGN</h2></div></div>
       <div class="project-grid" id="projectGrid">
         <a class="project-card project-wide" href="#projects" data-category="eyewear" data-project-id="static-premium-optical-eyewear" data-project="Premium Optical Eyewear" data-details="Unique Frame Geometry|Accurate Lens Shape &amp; Fitting|Nose Bridge &amp; Nose Pads|Temple &amp; Hinge Design|Premium Product Rendering" data-model="assets/models/project1.glb" data-gallery="assets/images/project1-1.webp,assets/images/project1-2.webp,assets/images/project1-3.webp"><div class="project-image"><img src="assets/images/project1-1.webp" alt="Premium optical eyewear render" loading="lazy"><span class="project-number">01</span><span class="project-arrow">↗</span></div><div class="project-meta"><div><h3>Premium Optical Eyewear</h3></div><span class="meta-arrow">↗</span></div></a>
         <a class="project-card" href="#projects" data-category="eyewear" data-project-id="static-parametric-eyewear" data-project="Parametric / 3D Printed Eyewear" data-details="Innovative Parametric Geometry|Lightweight Structure|Lattice Design|Wall Thickness Optimization|3D Printing-ready Model" data-model="assets/models/project2.glb" data-gallery="assets/images/project2-1.webp,assets/images/project2-2.webp,assets/images/project2-3.webp"><div class="project-image"><img src="assets/images/project2-1.webp" alt="Parametric 3D printed eyewear render" loading="lazy"><span class="project-number">02</span><span class="project-arrow">↗</span></div><div class="project-meta"><div><h3>Parametric / 3D Printed Eyewear</h3></div><span class="meta-arrow">↗</span></div></a>
@@ -43,17 +43,29 @@
       </div>
       <p class="project-category-empty" id="projectCategoryEmpty" role="status" hidden>No projects in this category yet. Add projects from the admin panel to show them here.</p>
       <button class="button button-light project-show-more-button" id="showMoreProjects" type="button" aria-controls="projectGrid" aria-expanded="false" hidden>Show more</button>
-      <p class="project-manager-status" id="projectManagerStatus" role="status"></p>
     </section>
     </div>
-    <section class="website-settings section-wrap" id="websiteSettings" aria-labelledby="websiteSettingsTitle" hidden>
+    <dialog class="admin-settings-dialog" id="adminSettingsDialog" aria-labelledby="adminSettingsTitle">
+      <div class="admin-settings-shell">
+        <header class="admin-settings-header">
+          <div><p class="section-kicker">ADMIN DASHBOARD</p><h2 id="adminSettingsTitle">Settings</h2><p>Manage your portfolio in one place.</p></div>
+          <button class="dialog-close" id="closeAdminSettings" type="button" aria-label="Close settings">×</button>
+        </header>
+        <div class="admin-settings-layout">
+          <nav class="admin-settings-nav" role="tablist" aria-label="Admin settings sections" aria-orientation="vertical">
+            <button id="accountSettingsTab" class="admin-settings-tab" type="button" role="tab" aria-selected="true" aria-controls="accountSettingsPanel" data-settings-tab="account">Account settings</button>
+            <button id="securitySettingsTab" class="admin-settings-tab" type="button" role="tab" aria-selected="false" aria-controls="securitySettingsPanel" data-settings-tab="security" tabindex="-1">Security settings</button>
+            <button id="projectSettingsTab" class="admin-settings-tab" type="button" role="tab" aria-selected="false" aria-controls="projectSettingsPanel" data-settings-tab="projects" tabindex="-1">Project settings</button>
+          </nav>
+          <div class="admin-settings-main">
+            <section class="admin-settings-panel" id="accountSettingsPanel" role="tabpanel" aria-labelledby="accountSettingsTab">
       <form class="website-settings-card" id="websiteSettingsForm">
         <header class="website-settings-heading">
-          <p class="section-kicker">SITE ADMIN</p>
-          <h2 id="websiteSettingsTitle">Website Settings</h2>
-          <p>Changes are saved for everyone who visits your portfolio. Project names and descriptions are managed from each project’s Edit button.</p>
+          <p class="section-kicker">YOUR PORTFOLIO</p>
+          <h2 id="websiteSettingsTitle">Account settings</h2>
+          <p>Customize the text, contact details, colors, and fonts visitors see on your portfolio.</p>
         </header>
-        <details class="website-settings-group" open>
+        <details class="website-settings-group">
           <summary>Text and labels</summary>
           <div class="website-settings-fields">
             <label>Brand name<input data-setting-path="text.brandName" maxlength="100"></label>
@@ -130,13 +142,13 @@
         <p class="website-settings-error" id="websiteSettingsError" role="alert"></p>
         <button class="button button-light website-settings-save" type="submit">Save website settings</button>
       </form>
-    </section>
-    <section class="admin-account-settings section-wrap" id="adminAccountSettings" aria-labelledby="adminAccountSettingsTitle" hidden>
+            </section>
+            <section class="admin-settings-panel" id="securitySettingsPanel" role="tabpanel" aria-labelledby="securitySettingsTab" hidden>
       <div class="admin-account-card">
         <header class="admin-account-heading">
-          <p class="section-kicker">ACCOUNT</p>
-          <h2 id="adminAccountSettingsTitle">Account settings</h2>
-          <p>Manage your administrator sign-in details.</p>
+          <p class="section-kicker">ACCOUNT SECURITY</p>
+          <h2 id="adminAccountSettingsTitle">Security settings</h2>
+          <p>Update your administrator email and password.</p>
         </header>
         <p class="admin-current-email">Current email <strong id="currentAdminEmail">Not available</strong></p>
         <form class="admin-account-form" id="changeEmailForm">
@@ -158,7 +170,19 @@
         </form>
         <button class="admin-account-signout" id="adminLogoutButton" type="button">Sign out</button>
       </div>
-    </section>
+            </section>
+            <section class="admin-settings-panel" id="projectSettingsPanel" role="tabpanel" aria-labelledby="projectSettingsTab" hidden>
+              <header class="project-settings-heading">
+                <div><p class="section-kicker">PORTFOLIO CONTENT</p><h2>Project settings</h2><p>Add, edit, or remove projects shown in your public portfolio.</p></div>
+                <button class="button button-light add-project-button" id="addProjectButton" type="button">+ Add Project</button>
+              </header>
+              <div class="project-settings-list" id="projectSettingsList" aria-live="polite"></div>
+              <p class="project-manager-status" id="projectManagerStatus" role="status"></p>
+            </section>
+          </div>
+        </div>
+      </div>
+    </dialog>
     <dialog class="project-editor-dialog" id="projectEditorDialog" aria-labelledby="projectEditorTitle">
       <form class="project-editor" id="projectEditorForm">
         <header class="project-editor-heading"><div><p class="section-kicker">YOUR PORTFOLIO</p><h2 id="projectEditorTitle">Create a new project</h2><p>Choose a category to show this project in the matching section.</p></div><button class="dialog-close" id="closeProjectEditor" type="button" aria-label="Close project form">×</button></header>

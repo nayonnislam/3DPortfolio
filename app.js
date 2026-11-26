@@ -61,10 +61,13 @@ const projectCategoryTitle = document.querySelector('#projectCategoryTitle');
 const projectCategoryEmpty = document.querySelector('#projectCategoryEmpty');
 const projectShowMoreButton = document.querySelector('#showMoreProjects');
 const projectManagerStatus = document.querySelector('#projectManagerStatus');
-const websiteSettingsPanel = document.querySelector('#websiteSettings');
 const websiteSettingsForm = document.querySelector('#websiteSettingsForm');
 const websiteSettingsMessage = document.querySelector('#websiteSettingsMessage');
 const websiteSettingsError = document.querySelector('#websiteSettingsError');
+const projectSettingsList = document.querySelector('#projectSettingsList');
+const adminSettingsDialog = document.querySelector('#adminSettingsDialog');
+const settingsTabs = [...document.querySelectorAll('[data-settings-tab]')];
+const settingsPanels = [...document.querySelectorAll('.admin-settings-panel')];
 let activeProjectCategory = 'eyewear';
 let siteSettings = normalizeSiteSettings(DEFAULT_SITE_SETTINGS);
 const expandedProjectCategories = new Set();
@@ -273,9 +276,6 @@ function renderCustomProjects() {
     const titleWrap = document.createElement('div');
     const title = document.createElement('h3');
     const metaArrow = document.createElement('span');
-    const actions = document.createElement('div');
-    const editButton = document.createElement('button');
-    const removeButton = document.createElement('button');
 
     card.className = 'project-card custom-project-card';
     card.dataset.projectId = project.id;
@@ -304,64 +304,72 @@ function renderCustomProjects() {
     title.textContent = project.title;
     metaArrow.className = 'meta-arrow';
     metaArrow.textContent = '↗';
-    actions.className = 'custom-project-actions';
-    editButton.className = 'custom-project-edit';
-    editButton.type = 'button';
-    editButton.dataset.projectId = project.id;
-    editButton.setAttribute('aria-label', `Edit ${project.title}`);
-    editButton.textContent = 'Edit';
-    removeButton.className = 'custom-project-remove';
-    removeButton.type = 'button';
-    removeButton.dataset.projectId = project.id;
-    removeButton.setAttribute('aria-label', `Delete ${project.title}`);
-    removeButton.textContent = '×';
     if (project.cover) imageBox.appendChild(image);
     imageBox.append(number, arrow);
     titleWrap.appendChild(title);
     meta.append(titleWrap, metaArrow);
     link.append(imageBox, meta);
-    actions.append(editButton, removeButton);
-    card.append(link, actions);
+    card.appendChild(link);
     projectGrid.appendChild(card);
   });
   applyProjectCategory();
+  renderProjectSettingsList();
   window.__nayonAppInitialized = true;
   updateAdminControls();
 }
 
-function addAdminActions(card) {
-  card.classList.add('admin-managed-project');
-  let actions = card.querySelector('.custom-project-actions');
-  if (!actions) {
-    actions = document.createElement('div');
-    actions.className = 'custom-project-actions';
-    const editButton = document.createElement('button');
-    editButton.className = 'custom-project-edit';
-    editButton.type = 'button';
-    editButton.textContent = 'Edit';
-    const removeButton = document.createElement('button');
-    removeButton.className = 'custom-project-remove';
-    removeButton.type = 'button';
-    removeButton.textContent = '×';
-    actions.append(editButton, removeButton);
-    card.appendChild(actions);
+function renderProjectSettingsList() {
+  projectSettingsList.replaceChildren();
+  const cards = [...projectGrid.querySelectorAll('.project-card')]
+    .filter(card => card.dataset.deleted !== 'true');
+
+  if (!cards.length) {
+    const emptyMessage = document.createElement('p');
+    emptyMessage.className = 'project-settings-empty';
+    emptyMessage.textContent = 'No projects yet. Add a project to get started.';
+    projectSettingsList.appendChild(emptyMessage);
+    return;
   }
-  const [editButton, removeButton] = actions.querySelectorAll('button');
-  editButton.dataset.projectId = card.dataset.projectId;
-  editButton.setAttribute('aria-label', `Edit ${card.dataset.project}`);
-  removeButton.dataset.projectId = card.dataset.projectId;
-  removeButton.setAttribute('aria-label', `Delete ${card.dataset.project}`);
-  actions.hidden = !isAdminSignedIn();
+
+  cards.forEach(card => {
+    const project = cardToProject(card);
+    const row = document.createElement('article');
+    const info = document.createElement('div');
+    const title = document.createElement('h3');
+    const category = document.createElement('p');
+    const actions = document.createElement('div');
+    const editButton = document.createElement('button');
+    const deleteButton = document.createElement('button');
+
+    row.className = 'project-settings-row';
+    info.className = 'project-settings-info';
+    title.textContent = project.title;
+    category.textContent = siteSettings.text.categories[project.category] || project.category;
+    category.className = 'project-settings-category';
+    actions.className = 'project-settings-actions';
+    editButton.className = 'project-setting-edit';
+    editButton.type = 'button';
+    editButton.dataset.projectId = project.id;
+    editButton.textContent = 'Edit';
+    editButton.setAttribute('aria-label', `Edit ${project.title}`);
+    deleteButton.className = 'project-setting-delete';
+    deleteButton.type = 'button';
+    deleteButton.dataset.projectId = project.id;
+    deleteButton.textContent = 'Delete';
+    deleteButton.setAttribute('aria-label', `Delete ${project.title}`);
+    info.append(title, category);
+    actions.append(editButton, deleteButton);
+    row.append(info, actions);
+    projectSettingsList.appendChild(row);
+  });
 }
 
 function updateAdminControls() {
   const signedIn = isAdminSignedIn();
   document.querySelector('#adminLoginButton').hidden = signedIn;
-  websiteSettingsPanel.hidden = !signedIn;
-  document.querySelector('#adminAccountSettings').hidden = !signedIn;
+  document.querySelector('#adminSettingsButton').hidden = !signedIn;
   document.querySelector('#currentAdminEmail').textContent = getAdminEmail() || 'No email address is set';
   document.querySelector('#addProjectButton').hidden = !signedIn;
-  projectGrid.querySelectorAll('.project-card').forEach(addAdminActions);
 }
 
 async function loadWebsiteSettings() {
@@ -371,6 +379,7 @@ async function loadWebsiteSettings() {
     siteSettings = normalizeSiteSettings(savedSettings);
     applySiteSettings(siteSettings);
     applyProjectCategory();
+    renderProjectSettingsList();
     if (isAdminSignedIn()) fillWebsiteSettingsForm();
   } catch (error) {
     console.error('Shared website settings could not be loaded.', error);
@@ -511,6 +520,7 @@ window.addEventListener('resize', () => {
 });
 applySiteSettings(siteSettings);
 applyProjectCategory();
+renderProjectSettingsList();
 updateAdminControls();
 if (isSupabaseConfigured()) {
   refreshProjects();
@@ -557,6 +567,7 @@ websiteSettingsForm.addEventListener('submit', async event => {
     siteSettings = normalizeSiteSettings(savedSettings);
     applySiteSettings(siteSettings);
     applyProjectCategory();
+    renderProjectSettingsList();
     fillWebsiteSettingsForm();
     websiteSettingsMessage.textContent = 'Website settings saved and published for all visitors.';
   } catch (error) {
@@ -663,18 +674,18 @@ projectEditorForm.addEventListener('submit', async event => {
 });
 
 document.addEventListener('click', event => {
-  const editButton = event.target.closest('.custom-project-edit');
+  const editButton = event.target.closest('.project-setting-edit');
   if (editButton) {
     const project = customProjects.find(item => item.id === editButton.dataset.projectId)
-      || cardToProject(editButton.closest('.project-card'));
+      || cardToProject(projectGrid.querySelector(`.project-card[data-project-id="${CSS.escape(editButton.dataset.projectId)}"]`));
     if (project && isAdminSignedIn()) openProjectEditor(project);
     return;
   }
 
-  const removeButton = event.target.closest('.custom-project-remove');
+  const removeButton = event.target.closest('.project-setting-delete');
   if (removeButton) {
     const project = customProjects.find(item => item.id === removeButton.dataset.projectId)
-      || cardToProject(removeButton.closest('.project-card'));
+      || cardToProject(projectGrid.querySelector(`.project-card[data-project-id="${CSS.escape(removeButton.dataset.projectId)}"]`));
     if (!project || !isAdminSignedIn() || !window.confirm(`Remove "${project.title}" from the public site?`)) return;
     deleteProject(project.id).then(() => {
       savedProjects = project.id.startsWith('static-')
@@ -712,12 +723,51 @@ function showAdminForm(form, title, description) {
   adminDialogDescription.textContent = description;
 }
 
+function activateSettingsTab(tab, moveFocus = false) {
+  const panelId = tab.getAttribute('aria-controls');
+  settingsTabs.forEach(item => {
+    const active = item === tab;
+    item.setAttribute('aria-selected', String(active));
+    item.tabIndex = active ? 0 : -1;
+  });
+  settingsPanels.forEach(panel => {
+    panel.hidden = panel.id !== panelId;
+  });
+  if (moveFocus) tab.focus();
+}
+
+settingsTabs.forEach(tab => {
+  tab.addEventListener('click', () => activateSettingsTab(tab));
+});
+document.querySelector('.admin-settings-nav').addEventListener('keydown', event => {
+  const currentIndex = settingsTabs.indexOf(document.activeElement);
+  if (currentIndex < 0) return;
+  let nextIndex = currentIndex;
+  if (event.key === 'ArrowDown' || event.key === 'ArrowRight') nextIndex = (currentIndex + 1) % settingsTabs.length;
+  else if (event.key === 'ArrowUp' || event.key === 'ArrowLeft') nextIndex = (currentIndex - 1 + settingsTabs.length) % settingsTabs.length;
+  else if (event.key === 'Home') nextIndex = 0;
+  else if (event.key === 'End') nextIndex = settingsTabs.length - 1;
+  else return;
+  event.preventDefault();
+  activateSettingsTab(settingsTabs[nextIndex], true);
+});
+document.querySelector('#adminSettingsButton').addEventListener('click', () => {
+  if (!isAdminSignedIn()) return;
+  activateSettingsTab(settingsTabs[0]);
+  adminSettingsDialog.showModal();
+});
+document.querySelector('#closeAdminSettings').addEventListener('click', () => adminSettingsDialog.close());
+adminSettingsDialog.addEventListener('click', event => {
+  if (event.target === adminSettingsDialog) adminSettingsDialog.close();
+});
+
 document.querySelector('#adminLoginButton').addEventListener('click', () => {
   showAdminForm(adminLoginForm, 'Admin Login', 'Sign in with your registered email or phone number and password.');
   adminDialog.showModal();
 });
 document.querySelector('#adminLogoutButton').addEventListener('click', async () => {
   await signOut();
+  adminSettingsDialog.close();
   updateAdminControls();
   projectManagerStatus.textContent = 'You have logged out of the admin panel.';
 });

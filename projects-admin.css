@@ -1,12 +1,3 @@
-.section-heading .add-project-button {
-  flex: 0 0 auto;
-  gap: 10px;
-  padding: 13px 18px;
-  border: 0;
-  font: inherit;
-  cursor: pointer;
-}
-
 .header-actions {
   display: flex;
   align-items: center;
@@ -32,66 +23,16 @@
 
 .header-admin-button[hidden],
 .add-project-button[hidden],
-.custom-project-actions[hidden],
 .admin-form[hidden] {
   display: none;
 }
 
-.custom-project-card,
-.admin-managed-project {
+.custom-project-card {
   position: relative;
 }
 
 .custom-project-link {
   display: block;
-}
-
-.custom-project-remove {
-  position: absolute;
-  z-index: 3;
-  top: 8px;
-  right: 8px;
-  display: grid;
-  width: 30px;
-  height: 30px;
-  place-items: center;
-  padding: 0;
-  border: 1px solid rgba(255, 255, 255, .35);
-  border-radius: 50%;
-  color: #fff;
-  background: rgba(8, 10, 13, .72);
-  font: 20px/1 var(--font);
-  cursor: pointer;
-}
-
-.custom-project-actions {
-  position: absolute;
-  z-index: 3;
-  top: 8px;
-  right: 8px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.custom-project-edit {
-  min-height: 30px;
-  padding: 0 11px;
-  border: 1px solid rgba(255, 255, 255, .35);
-  border-radius: 18px;
-  color: #fff;
-  background: rgba(8, 10, 13, .78);
-  font: 10px var(--font);
-  cursor: pointer;
-}
-
-.custom-project-edit:hover {
-  color: #080a0d;
-  background: #f2f4f8;
-}
-
-.custom-project-actions .custom-project-remove {
-  position: static;
 }
 
 .project-image-empty {
@@ -110,24 +51,11 @@
   content: "Add a cover image";
 }
 
-.custom-project-remove:hover {
-  background: #8d3434;
-}
-
 .project-manager-status {
   min-height: 1.5em;
   margin: 20px 0 0;
   color: #aab4c4;
   font-size: 11px;
-}
-
-.admin-account-settings[hidden] {
-  display: none;
-}
-
-.admin-account-settings {
-  width: min(780px, calc(100% - 40px));
-  margin: clamp(34px, 7vw, 76px) auto;
 }
 
 .admin-account-card {
@@ -478,8 +406,8 @@
 }
 
 .project-editor :focus-visible,
-.custom-project-remove:focus-visible,
-.custom-project-edit:focus-visible {
+.project-setting-delete:focus-visible,
+.project-setting-edit:focus-visible {
   outline: 2px solid var(--blue);
   outline-offset: 3px;
 }
@@ -492,11 +420,6 @@
   .header-admin-button {
     padding: 8px 10px;
     font-size: 9px;
-  }
-
-  .section-heading .add-project-button {
-    padding: 11px 14px;
-    font-size: 10px;
   }
 
 }

@@ -17,12 +17,12 @@ QUICK SETUP
 7. In Authentication > Providers, enable Phone only if phone/password sign-in and SMS reset are desired. Configure an SMS provider such as Twilio or another supported provider and add rate limits/CAPTCHA for production.
 8. In Authentication > Email Templates > Reset Password, use the OTP token in the message (for example: "Your password reset code is {{ .Token }}") so the in-site code form can verify it. Configure custom SMTP for reliable production email delivery.
 9. Copy the Supabase Project URL and publishable/anon key from Project Settings > API into supabase-config.js. These two values are public. Do not copy a secret/service_role key.
-10. Redeploy the static site on Vercel. The Login, Add Project, Edit, Delete, password change, and recovery features will activate once the config is valid.
-11. After an administrator logs in, Website Settings lets you customize the public text, contact information, theme colors, and fonts. Changes are shared with all visitors through Supabase.
+10. Redeploy the static site on Vercel. Admin login, project management, password changes, and recovery activate once the config is valid.
+11. After an administrator logs in, open Settings in the header. Account settings customize public text, contact details, colors, and fonts; Security settings manage the admin email and password; Project settings add, edit, or remove projects.
 
 LOGIN AND PASSWORD RECOVERY
 - Admin login accepts the registered email or confirmed phone number and password.
-- After login, use Account settings below the project grid to change the email or password, or sign out. Email changes may remain pending until confirmed from the email message.
+- After login, open Settings > Security settings to change the email or password, or sign out. Email changes may remain pending until confirmed from the email message.
 - Forgot password accepts the registered email (email OTP) or confirmed phone in +country-code format (SMS OTP). Phone reset verifies an SMS sign-in OTP, checks the admin role, then sets a new password.
 - Supabase recovery email must use the OTP template above. SMS requires an enabled phone provider and may incur provider charges.
 - Passwords must meet Supabase Auth password policy. The UI asks for at least 12 characters with uppercase/lowercase, a number, and a symbol; configure the same policy in Supabase Auth.
@@ -32,7 +32,7 @@ PROJECTS AND FILES
 - Admin project edits are stored in the shared portfolio_projects table and appear for all visitors.
 - Website-wide settings are stored in portfolio_site_settings. Public visitors can read settings; only administrators can save them.
 - Admins can assign projects to Eyewear Design, Product Design, Character Design, or 2D Design. Existing projects default to Eyewear Design.
-- Project titles under each image can be changed with the admin Edit action. Category grids show two rows at a time; Show more expands the selected category.
+- Use Settings > Project settings to add, edit, or remove projects. Category grids show two rows at a time; Show more expands the selected category.
 - Project uploads go to the public "portfolio" bucket. Upload size is limited to 25 MB per file. The bucket policy in setup.sql allows only admin app_metadata roles to upload/edit/delete.
 - Existing Eyewear cards remain in index.html. Their cloud overrides are keyed by static IDs; newly created projects use generated UUIDs.
 
