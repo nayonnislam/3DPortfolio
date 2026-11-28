@@ -26,6 +26,14 @@ import {
   normalizeSiteSettings
 } from './site-settings.js';
 
+const ADMIN_IDLE_TIMEOUT_MS = 60 * 60 * 1000;
+const ADMIN_ACTIVITY_SESSION_KEY = 'nayonPortfolioAdminLastActivity';
+const ADMIN_ACTIVITY_WRITE_INTERVAL_MS = 5000;
+let adminIdleTimer = null;
+let adminLastActivityAt = 0;
+let adminLastActivityWriteAt = 0;
+let adminLogoutInProgress = false;
+
 const viewer = document.querySelector('#modelViewer');
 const loading = document.querySelector('#viewerLoading');
 const fallback = document.querySelector('.hero-fallback');
@@ -371,6 +379,49 @@ function updateAdminControls() {
   document.querySelector('#adminHeaderLogoutButton').hidden = !signedIn;
   document.querySelector('#currentAdminEmail').textContent = getAdminEmail() || 'No email address is set';
   document.querySelector('#addProjectButton').hidden = !signedIn;
+  if (signedIn) scheduleAdminIdleLogout();
+  else clearTimeout(adminIdleTimer);
+}
+
+function scheduleAdminIdleLogout() {
+  clearTimeout(adminIdleTimer);
+  if (!isAdminSignedIn()) return;
+
+  const now = Date.now();
+  if (!adminLastActivityAt) {
+    const savedActivityAt = Number(sessionStorage.getItem(ADMIN_ACTIVITY_SESSION_KEY));
+    adminLastActivityAt = Number.isSafeInteger(savedActivityAt) && savedActivityAt > 0 && savedActivityAt <= now
+      ? savedActivityAt
+      : now;
+    adminLastActivityWriteAt = adminLastActivityAt;
+    if (adminLastActivityAt === now) {
+      sessionStorage.setItem(ADMIN_ACTIVITY_SESSION_KEY, String(now));
+    }
+  }
+
+  const remainingTime = ADMIN_IDLE_TIMEOUT_MS - (now - adminLastActivityAt);
+  adminIdleTimer = setTimeout(() => {
+    if (Date.now() - adminLastActivityAt >= ADMIN_IDLE_TIMEOUT_MS) {
+      void logoutAdmin('You were signed out after one hour of inactivity.');
+    } else {
+      scheduleAdminIdleLogout();
+    }
+  }, Math.max(0, remainingTime));
+}
+
+function recordAdminActivity(forcePersist = false) {
+  if (!isAdminSignedIn()) return;
+  const now = Date.now();
+  if (!forcePersist && adminLastActivityAt && now - adminLastActivityAt >= ADMIN_IDLE_TIMEOUT_MS) {
+    void logoutAdmin('You were signed out after one hour of inactivity.');
+    return;
+  }
+  adminLastActivityAt = now;
+  if (forcePersist || now - adminLastActivityWriteAt >= ADMIN_ACTIVITY_WRITE_INTERVAL_MS) {
+    sessionStorage.setItem(ADMIN_ACTIVITY_SESSION_KEY, String(now));
+    adminLastActivityWriteAt = now;
+  }
+  scheduleAdminIdleLogout();
 }
 
 async function loadWebsiteSettings() {
@@ -766,14 +817,29 @@ document.querySelector('#adminLoginButton').addEventListener('click', () => {
   showAdminForm(adminLoginForm, 'Admin Login', 'Sign in with your registered email or phone number and password.');
   adminDialog.showModal();
 });
-async function logoutAdmin() {
-  await signOut();
-  adminSettingsDialog.close();
-  updateAdminControls();
-  projectManagerStatus.textContent = 'You have logged out of the admin panel.';
+async function logoutAdmin(message = 'You have logged out of the admin panel.') {
+  if (adminLogoutInProgress) return;
+  adminLogoutInProgress = true;
+  clearTimeout(adminIdleTimer);
+  try {
+    sessionStorage.removeItem(ADMIN_ACTIVITY_SESSION_KEY);
+    await signOut();
+    adminSettingsDialog.close();
+    updateAdminControls();
+    projectManagerStatus.textContent = message;
+  } finally {
+    adminLastActivityAt = 0;
+    adminLastActivityWriteAt = 0;
+    adminLogoutInProgress = false;
+  }
 }
-document.querySelector('#adminLogoutButton').addEventListener('click', logoutAdmin);
-document.querySelector('#adminHeaderLogoutButton').addEventListener('click', logoutAdmin);
+document.querySelector('#adminLogoutButton').addEventListener('click', () => logoutAdmin());
+document.querySelector('#adminHeaderLogoutButton').addEventListener('click', () => logoutAdmin());
+const trackAdminActivity = () => recordAdminActivity();
+document.addEventListener('pointerdown', trackAdminActivity, { passive: true });
+document.addEventListener('keydown', trackAdminActivity);
+document.addEventListener('touchstart', trackAdminActivity, { passive: true });
+document.addEventListener('scroll', trackAdminActivity, { capture: true, passive: true });
 document.querySelector('#closeAdminDialog').addEventListener('click', () => adminDialog.close());
 adminDialog.addEventListener('click', event => {
   if (event.target === adminDialog) adminDialog.close();
@@ -806,6 +872,7 @@ adminLoginForm.addEventListener('submit', async event => {
   errorOutput.textContent = '';
   try {
     await signIn(adminLoginForm.elements.username.value, adminLoginForm.elements.password.value);
+    recordAdminActivity(true);
     await refreshProjects();
     updateAdminControls();
     fillWebsiteSettingsForm();
