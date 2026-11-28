@@ -22,7 +22,7 @@ QUICK SETUP
 
 LOGIN AND PASSWORD RECOVERY
 - Admin login accepts the registered email or confirmed phone number and password.
-- After login, open Settings > Security settings to change the email or password, or sign out. Email changes may remain pending until confirmed from the email message.
+- After login, use the Sign out button in the header, or open Settings > Security settings to change the email or password and sign out. Email changes may remain pending until confirmed from the email message.
 - Forgot password accepts the registered email (email OTP) or confirmed phone in +country-code format (SMS OTP). Phone reset verifies an SMS sign-in OTP, checks the admin role, then sets a new password.
 - Supabase recovery email must use the OTP template above. SMS requires an enabled phone provider and may incur provider charges.
 - Passwords must meet Supabase Auth password policy. The UI asks for at least 12 characters with uppercase/lowercase, a number, and a symbol; configure the same policy in Supabase Auth.

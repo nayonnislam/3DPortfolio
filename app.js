@@ -368,6 +368,7 @@ function updateAdminControls() {
   const signedIn = isAdminSignedIn();
   document.querySelector('#adminLoginButton').hidden = signedIn;
   document.querySelector('#adminSettingsButton').hidden = !signedIn;
+  document.querySelector('#adminHeaderLogoutButton').hidden = !signedIn;
   document.querySelector('#currentAdminEmail').textContent = getAdminEmail() || 'No email address is set';
   document.querySelector('#addProjectButton').hidden = !signedIn;
 }
@@ -765,12 +766,14 @@ document.querySelector('#adminLoginButton').addEventListener('click', () => {
   showAdminForm(adminLoginForm, 'Admin Login', 'Sign in with your registered email or phone number and password.');
   adminDialog.showModal();
 });
-document.querySelector('#adminLogoutButton').addEventListener('click', async () => {
+async function logoutAdmin() {
   await signOut();
   adminSettingsDialog.close();
   updateAdminControls();
   projectManagerStatus.textContent = 'You have logged out of the admin panel.';
-});
+}
+document.querySelector('#adminLogoutButton').addEventListener('click', logoutAdmin);
+document.querySelector('#adminHeaderLogoutButton').addEventListener('click', logoutAdmin);
 document.querySelector('#closeAdminDialog').addEventListener('click', () => adminDialog.close());
 adminDialog.addEventListener('click', event => {
   if (event.target === adminDialog) adminDialog.close();
